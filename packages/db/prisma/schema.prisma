@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(cuid())
+  githubId      String?    @unique
+  name          String?
+  email         String?    @unique
+  avatarUrl     String?
+  stacksAddress String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  solutions     Solution[]
+}
+
+model Agent {
+  id           String    @id @default(cuid())
+  agentString  String    @unique
+  createdAt    DateTime  @default(now())
+  lastSeen     DateTime  @default(now())
+  problems     Problem[]
+  payments     Payment[]
+}
+
+model Problem {
+  id              String   @id @default(cuid())
+  agentId         String
+  agent           Agent    @relation(fields: [agentId], references: [id])
+  status          String   @default("open")
+  errorType       String
+  errorMessage    String
+  fullQueryJson   String   // Storing JSON as text to be simple if needed, or Json type if PG
+  escrowTx        String?
+  bountyAmount    String?
+  urgency         String
+  solutionId      String?
+  solution        Solution? @relation(fields: [solutionId], references: [id])
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+  solveDeadline   DateTime?
+}
+
+model Solution {
+  id                String   @id @default(cuid())
+  title             String
+  authorId          String
+  author            User     @relation(fields: [authorId], references: [id])
+  structuredFixJson String   
+  successRate       Float    @default(0.0)
+  totalUses         Int      @default(0)
+  priceUsdc         String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  problems          Problem[]
+}
+
+model Payment {
+  id         String   @id @default(cuid())
+  txHash     String   @unique
+  agentId    String
+  agent      Agent    @relation(fields: [agentId], references: [id])
+  solutionId String
+  amountMicro Int
+  currency   String   @default("USDCx")
+  network    String   @default("stacks:testnet")
+  status     String   @default("confirmed")
+  createdAt  DateTime @default(now())
+}
