@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { URGENCY_CONFIG, type Problem, type Urgency } from '@/lib/types';
-import { getStoredAddress, shortAddress } from '@/lib/auth';
+import { getStoredAddress, shortAddress, clearSession } from '@/lib/auth';
+import { disconnect } from '@stacks/connect';
 
 function Spinner() {
   return (
@@ -160,6 +161,12 @@ export default function DashboardPage() {
     }
   }, [router]);
 
+  function handleDisconnect() {
+    try { disconnect(); } catch { /* wallet may already be disconnected */ }
+    clearSession();
+    router.replace('/onboard');
+  }
+
   // Earnings state
   const [earningsRows, setEarningsRows] = useState<EarningRow[]>([]);
   const [earningsTotals, setEarningsTotals] = useState({ earned: '0.0000', pending: '0.0000', uses: 0 });
@@ -280,7 +287,7 @@ export default function DashboardPage() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {walletAddress && (
             <a
               href={`https://explorer.hiro.so/address/${walletAddress}?chain=testnet`}
@@ -291,8 +298,11 @@ export default function DashboardPage() {
               {shortAddress(walletAddress)}
             </a>
           )}
-          <button className="font-mono text-[11px] uppercase tracking-widest px-4 py-1.5 rounded-full border border-[var(--rule)] text-[var(--ink-secondary)] hover:text-[var(--ink-primary)] hover:border-[var(--ink-tertiary)] transition-colors">
-            Withdraw
+          <button
+            onClick={handleDisconnect}
+            className="font-mono text-[11px] uppercase tracking-widest px-4 py-1.5 rounded-full border border-[var(--rule)] text-[var(--ink-tertiary)] hover:text-[#ef4444] hover:border-[#ef4444]/40 transition-colors"
+          >
+            Disconnect
           </button>
         </div>
       </header>
