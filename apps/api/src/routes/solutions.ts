@@ -143,9 +143,18 @@ router.get('/search', async (req: Request, res: Response) => {
     });
   }
 
-  const STOP_WORDS = new Set(['a','an','the','in','on','at','to','of','is','it','no','not','be','as','or','and','for','from','with','that','this','was','are','has','have','but','by','can','do','we','my','our','if','so','use','using','file','line','when','after','error','failed','cannot','could']);
-  const keywords = (q as string)
-    .split(/[\s,.:'"()\[\]]+/)
+  const STOP_WORDS = new Set(['a','an','the','in','on','at','to','of','is','it','no','not','be','as','or','and','for','from','with','that','this','was','are','has','have','but','by','can','do','we','my','our','if','so','use','using','file','line','when','after','error','failed','cannot','could','fix','named','module']);
+
+  // Accept both plain string "foo bar" and JSON array "[\"foo\",\"bar\"]"
+  const raw = (q as string).trim();
+  let rawTokens: string[] = [];
+  if (raw.startsWith('[')) {
+    try { rawTokens = JSON.parse(raw); } catch { rawTokens = raw.split(/[\s,]+/); }
+  } else {
+    rawTokens = raw.split(/[\s,.:'"()\[\]]+/);
+  }
+  const keywords = rawTokens
+    .flatMap(t => t.split(/[\s.:'"()\[\]]+/)) // further split any compound tokens
     .map(k => k.trim())
     .filter(k => k.length >= 3 && !STOP_WORDS.has(k.toLowerCase()));
   const stackDomains = stack ? (stack as string).split(',').map(s => s.trim()) : [];

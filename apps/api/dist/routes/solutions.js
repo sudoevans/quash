@@ -129,9 +129,23 @@ router.get('/search', async (req, res) => {
             error: { code: 'INVALID_REQUEST', message: 'q query parameter is required.' },
         });
     }
-    const STOP_WORDS = new Set(['a', 'an', 'the', 'in', 'on', 'at', 'to', 'of', 'is', 'it', 'no', 'not', 'be', 'as', 'or', 'and', 'for', 'from', 'with', 'that', 'this', 'was', 'are', 'has', 'have', 'but', 'by', 'can', 'do', 'we', 'my', 'our', 'if', 'so', 'use', 'using', 'file', 'line', 'when', 'after', 'error', 'failed', 'cannot', 'could']);
-    const keywords = q
-        .split(/[\s,.:'"()\[\]]+/)
+    const STOP_WORDS = new Set(['a', 'an', 'the', 'in', 'on', 'at', 'to', 'of', 'is', 'it', 'no', 'not', 'be', 'as', 'or', 'and', 'for', 'from', 'with', 'that', 'this', 'was', 'are', 'has', 'have', 'but', 'by', 'can', 'do', 'we', 'my', 'our', 'if', 'so', 'use', 'using', 'file', 'line', 'when', 'after', 'error', 'failed', 'cannot', 'could', 'fix', 'named', 'module']);
+    // Accept both plain string "foo bar" and JSON array "[\"foo\",\"bar\"]"
+    const raw = q.trim();
+    let rawTokens = [];
+    if (raw.startsWith('[')) {
+        try {
+            rawTokens = JSON.parse(raw);
+        }
+        catch {
+            rawTokens = raw.split(/[\s,]+/);
+        }
+    }
+    else {
+        rawTokens = raw.split(/[\s,.:'"()\[\]]+/);
+    }
+    const keywords = rawTokens
+        .flatMap(t => t.split(/[\s.:'"()\[\]]+/)) // further split any compound tokens
         .map(k => k.trim())
         .filter(k => k.length >= 3 && !STOP_WORDS.has(k.toLowerCase()));
     const stackDomains = stack ? stack.split(',').map(s => s.trim()) : [];
