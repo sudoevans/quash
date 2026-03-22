@@ -129,41 +129,70 @@ router.get('/search', async (req, res) => {
             error: { code: 'INVALID_REQUEST', message: 'q query parameter is required.' },
         });
     }
-    const STOP_WORDS = new Set(['a', 'an', 'the', 'in', 'on', 'at', 'to', 'of', 'is', 'it', 'no', 'not', 'be', 'as', 'or', 'and', 'for', 'from', 'with', 'that', 'this', 'was', 'are', 'has', 'have', 'but', 'by', 'can', 'do', 'we', 'my', 'our', 'if', 'so']);
+    const STOP_WORDS = new Set(['a', 'an', 'the', 'in', 'on', 'at', 'to', 'of', 'is', 'it', 'no', 'not', 'be', 'as', 'or', 'and', 'for', 'from', 'with', 'that', 'this', 'was', 'are', 'has', 'have', 'but', 'by', 'can', 'do', 'we', 'my', 'our', 'if', 'so', 'use', 'using', 'file', 'line', 'when', 'after', 'error', 'failed', 'cannot', 'could']);
     const keywords = q
-        .split(/[\s,]+/)
+        .split(/[\s,.:'"()\[\]]+/)
         .map(k => k.trim())
-        .filter(k => k.length >= 4 && !STOP_WORDS.has(k.toLowerCase()));
+        .filter(k => k.length >= 3 && !STOP_WORDS.has(k.toLowerCase()));
     const stackDomains = stack ? stack.split(',').map(s => s.trim()) : [];
     const maxLimit = Math.min(parseInt(limit, 10) || 5, 20);
     if (keywords.length === 0) {
         return res.status(400).json({
-            error: { code: 'INVALID_REQUEST', message: 'Query must contain at least one meaningful keyword (min 4 chars).' },
+            error: { code: 'INVALID_REQUEST', message: 'q must contain at least one meaningful keyword.' },
         });
     }
     const start = Date.now();
+    // Score a solution against keywords — higher = better match
+    function score(sol) {
+        let points = 0;
+        const titleLower = sol.title.toLowerCase();
+        const sigsLower = sol.problemSignatures.map(s => s.toLowerCase());
+        const stacksLower = sol.affectedStacks.map(s => s.toLowerCase());
+        for (const kw of keywords) {
+            const kwl = kw.toLowerCase();
+            if (titleLower.includes(kwl))
+                points += 3; // keyword in title
+            if (sigsLower.some(s => s.includes(kwl)))
+                points += 5; // keyword in signatures (strongest signal)
+            if (stacksLower.some(s => s.includes(kwl)))
+                points += 2; // keyword in affected stacks
+        }
+        // Boost by success rate (0–1 range adds up to 2 extra points)
+        points += sol.successRate * 2;
+        return points;
+    }
     try {
-        const solutions = await prisma.solution.findMany({
+        // Fetch broadly: any keyword matches title or any signature (OR across all)
+        const candidates = await prisma.solution.findMany({
             where: {
                 AND: [
-                    // Every keyword must match title OR signatures (AND across keywords, OR within each)
-                    ...keywords.map(kw => ({
+                    {
                         OR: [
-                            { title: { contains: kw, mode: 'insensitive' } },
-                            { problemSignatures: { has: kw } },
+                            ...keywords.map(kw => ({ title: { contains: kw, mode: 'insensitive' } })),
+                            ...keywords.map(kw => ({ problemSignatures: { has: kw } })),
+                            // Also match partial signature text via title fallback for compound error strings
+                            ...keywords.map(kw => ({
+                                problemSignatures: {
+                                    isEmpty: false,
+                                },
+                            })).slice(0, 1), // include all solutions that have signatures set
                         ],
-                    })),
-                    // Optional stack domain filter
+                    },
                     ...(stackDomains.length > 0
                         ? [{ affectedStacks: { hasSome: stackDomains } }]
                         : []),
                 ],
             },
-            take: maxLimit,
-            orderBy: { successRate: 'desc' },
         });
+        // Score and rank — return only solutions with at least 1 point
+        const scored = candidates
+            .map(sol => ({ sol, points: score(sol) }))
+            .filter(({ points }) => points > 0)
+            .sort((a, b) => b.points - a.points)
+            .slice(0, maxLimit)
+            .map(({ sol }) => sol);
         const queryTimeMs = Date.now() - start;
-        if (solutions.length === 0) {
+        if (scored.length === 0) {
             return res.json({
                 results: [],
                 total: 0,
@@ -172,7 +201,7 @@ router.get('/search', async (req, res) => {
             });
         }
         return res.json({
-            results: solutions.map(s => ({
+            results: scored.map(s => ({
                 solution_id: s.id,
                 title: s.title,
                 problem_signatures: s.problemSignatures,
@@ -183,7 +212,7 @@ router.get('/search', async (req, res) => {
                 author_tier: null, // tier system is Phase 2
                 created_at: s.createdAt,
             })),
-            total: solutions.length,
+            total: scored.length,
             query_time_ms: queryTimeMs,
         });
     }
