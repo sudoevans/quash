@@ -19,19 +19,19 @@ function Spinner() {
 export default function OnboardPage() {
   const router = useRouter();
 
-  // Step 1 fields
-  const [name, setName]       = useState('');
-  const [github, setGithub]   = useState('');
-  const [email, setEmail]     = useState('');
+  // Profile fields (new users)
+  const [name, setName]     = useState('');
+  const [github, setGithub] = useState('');
+  const [email, setEmail]   = useState('');
 
-  // Step state
-  const [step, setStep]       = useState<1 | 2>(1);
+  // Flow state: 'connect' | 'returning' | 'new-profile' | 'new-wallet'
+  const [flow, setFlow] = useState<'connect' | 'returning' | 'new-profile' | 'new-wallet'>('connect');
 
-  // Step 2 state
-  const [address, setAddress] = useState('');
+  const [address, setAddress]       = useState('');
+  const [returningName, setReturningName] = useState('');
   const [connecting, setConnecting] = useState(false);
   const [completing, setCompleting] = useState(false);
-  const [error, setError]     = useState('');
+  const [error, setError]           = useState('');
 
   async function connectWallet() {
     setConnecting(true);
@@ -44,7 +44,19 @@ export default function OnboardPage() {
       );
       const addr = stxAddr?.address ?? addresses[0]?.address;
       if (!addr) throw new Error('No Stacks address returned from wallet.');
+
       setAddress(addr);
+
+      // Check if already registered
+      const me = await fetch(`${API_BASE}/auth/me?address=${addr}`);
+      if (me.ok) {
+        const data = await me.json();
+        setReturningName(data.name ?? '');
+        saveSession(addr, data.name ?? addr);
+        setFlow('returning');
+      } else {
+        setFlow('new-profile');
+      }
     } catch (e: any) {
       setError(e?.message ?? 'Wallet connection failed. Make sure Leather or Xverse is installed.');
     } finally {
@@ -79,6 +91,8 @@ export default function OnboardPage() {
     }
   }
 
+  const shortAddr = address ? `${address.slice(0, 8)}…${address.slice(-6)}` : '';
+
   return (
     <div className="min-h-screen bg-[var(--surface-base)] text-[var(--ink-primary)] flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm">
@@ -87,27 +101,61 @@ export default function OnboardPage() {
         <div className="text-center mb-10">
           <div className="font-mono text-sm tracking-tight text-[var(--ink-primary)] mb-1">Quash</div>
           <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)]">
-            Invite-only · Resolver Onboarding
+            Expert Onboarding
           </p>
         </div>
 
-        {/* Step indicator */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <span className={`font-mono text-[10px] ${step === 1 ? 'text-[var(--ink-primary)]' : 'text-[var(--ink-tertiary)]'}`}>
-            1
-          </span>
-          <div className="flex items-center gap-1">
-            <div className={`w-6 h-px ${step >= 1 ? 'bg-[var(--green)]' : 'bg-[var(--rule)]'}`} />
-            <div className={`w-1.5 h-1.5 rounded-full ${step >= 2 ? 'bg-[var(--green)]' : 'bg-[var(--rule)]'}`} />
-            <div className={`w-6 h-px ${step >= 2 ? 'bg-[var(--green)]' : 'bg-[var(--rule)]'}`} />
+        {/* ── Connect wallet (initial state) ───────────────────────── */}
+        {flow === 'connect' && (
+          <div className="flex flex-col gap-5">
+            <div>
+              <h1 className="font-mono text-xs font-medium text-[var(--ink-primary)] mb-1">Connect your wallet</h1>
+              <p className="font-mono text-[11px] text-[var(--ink-tertiary)] leading-relaxed">
+                Your Stacks address is your identity on Quash. Earnings and solutions are linked to it on-chain.
+              </p>
+            </div>
+            <button
+              onClick={connectWallet}
+              disabled={connecting}
+              className="w-full py-3 rounded-full border border-[var(--rule)] text-[var(--ink-primary)] font-mono text-xs uppercase tracking-widest hover:border-[var(--green)] hover:text-[var(--green)] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            >
+              {connecting ? <><Spinner /><span>Checking…</span></> : 'Connect Wallet (Leather / Xverse)'}
+            </button>
+            {error && (
+              <div className="rounded-lg border border-[#3a1a1a] bg-[var(--surface-inset)] px-4 py-3">
+                <p className="font-mono text-[11px] text-[#ef4444]">{error}</p>
+              </div>
+            )}
           </div>
-          <span className={`font-mono text-[10px] ${step === 2 ? 'text-[var(--ink-primary)]' : 'text-[var(--ink-tertiary)]'}`}>
-            2
-          </span>
-        </div>
+        )}
 
-        {/* ── Step 1: Profile ─────────────────────────────────────────── */}
-        {step === 1 && (
+        {/* ── Returning user ───────────────────────────────────────── */}
+        {flow === 'returning' && (
+          <div className="flex flex-col gap-5">
+            <div className="rounded-lg border border-[var(--green-dim)] bg-[var(--surface-raised)] p-6 text-center">
+              <span className="w-2 h-2 rounded-full bg-[var(--green)] shadow-[0_0_8px_var(--green)] inline-block mb-4" />
+              <h1 className="font-mono text-sm font-medium text-[var(--ink-primary)] mb-1">
+                Welcome back{returningName ? `, ${returningName}` : ''}
+              </h1>
+              <p className="font-mono text-[10px] text-[var(--ink-tertiary)]">{shortAddr}</p>
+            </div>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="w-full py-3 rounded-full bg-[var(--green)] text-[var(--surface-base)] font-mono text-xs uppercase tracking-widest hover:opacity-90 transition-opacity"
+            >
+              Continue to Dashboard →
+            </button>
+            <button
+              onClick={() => { setFlow('connect'); setAddress(''); setError(''); }}
+              className="w-full font-mono text-[10px] text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)] transition-colors"
+            >
+              Use a different wallet
+            </button>
+          </div>
+        )}
+
+        {/* ── New user: profile form ───────────────────────────────── */}
+        {flow === 'new-profile' && (
           <div className="flex flex-col gap-5">
             <div>
               <h1 className="font-mono text-xs font-medium text-[var(--ink-primary)] mb-1">Your profile</h1>
@@ -115,7 +163,6 @@ export default function OnboardPage() {
                 Tell us who you are. This is how you appear to agents when you resolve their errors.
               </p>
             </div>
-
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <label className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)]">
@@ -130,7 +177,6 @@ export default function OnboardPage() {
                   autoFocus
                 />
               </div>
-
               <div className="flex flex-col gap-1.5">
                 <label className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)]">
                   GitHub Handle <span className="opacity-40">optional</span>
@@ -143,7 +189,6 @@ export default function OnboardPage() {
                   onChange={e => setGithub(e.target.value)}
                 />
               </div>
-
               <div className="flex flex-col gap-1.5">
                 <label className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)]">
                   Email <span className="opacity-40">optional</span>
@@ -157,81 +202,27 @@ export default function OnboardPage() {
                 />
               </div>
             </div>
-
-            <button
-              onClick={() => setStep(2)}
-              disabled={!name.trim()}
-              className="w-full py-3 rounded-full bg-[var(--green)] text-[var(--surface-base)] font-mono text-xs uppercase tracking-widest hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
-            >
-              Continue →
-            </button>
-          </div>
-        )}
-
-        {/* ── Step 2: Wallet connect ───────────────────────────────────── */}
-        {step === 2 && (
-          <div className="flex flex-col gap-5">
-            <div>
-              <h1 className="font-mono text-xs font-medium text-[var(--ink-primary)] mb-1">Connect your wallet</h1>
-              <p className="font-mono text-[11px] text-[var(--ink-tertiary)] leading-relaxed">
-                Your Stacks address is your identity on Quash. Earnings and solutions are linked to it on-chain.
-              </p>
-            </div>
-
-            {!address ? (
-              <button
-                onClick={connectWallet}
-                disabled={connecting}
-                className="w-full py-3 rounded-full border border-[var(--rule)] text-[var(--ink-primary)] font-mono text-xs uppercase tracking-widest hover:border-[var(--green)] hover:text-[var(--green)] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-              >
-                {connecting ? <><Spinner /><span>Opening wallet…</span></> : 'Connect Wallet (Leather / Xverse)'}
-              </button>
-            ) : (
-              <div className="rounded-lg border border-[var(--green-dim)] bg-[var(--surface-raised)] p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="w-2 h-2 rounded-full bg-[var(--green)] shadow-[0_0_8px_var(--green)]" />
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--green)]">Connected</span>
-                </div>
-                <p className="font-mono text-xs text-[var(--ink-primary)] break-all mb-1">{address}</p>
-                <a
-                  href={`https://explorer.hiro.so/address/${address}?chain=testnet`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-mono text-[10px] text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors"
-                >
-                  View on Hiro Explorer ↗
-                </a>
-                <button
-                  onClick={() => setAddress('')}
-                  className="block mt-2 font-mono text-[10px] text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)] transition-colors"
-                >
-                  Change wallet
-                </button>
-              </div>
-            )}
-
             {error && (
               <div className="rounded-lg border border-[#3a1a1a] bg-[var(--surface-inset)] px-4 py-3">
                 <p className="font-mono text-[11px] text-[#ef4444]">{error}</p>
               </div>
             )}
-
             <button
               onClick={completeSetup}
-              disabled={!address || completing}
+              disabled={!name.trim() || completing}
               className="w-full py-3 rounded-full bg-[var(--green)] text-[var(--surface-base)] font-mono text-xs uppercase tracking-widest hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
             >
               {completing ? <><Spinner /><span>Setting up…</span></> : 'Complete Setup →'}
             </button>
-
             <button
-              onClick={() => { setStep(1); setError(''); }}
+              onClick={() => { setFlow('connect'); setAddress(''); setError(''); }}
               className="w-full font-mono text-[10px] text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)] transition-colors"
             >
               ← Back
             </button>
           </div>
         )}
+
       </div>
     </div>
   );
