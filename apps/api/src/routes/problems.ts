@@ -263,4 +263,132 @@ router.get('/:problem_id/status', requireAgentId, async (req: Request, res: Resp
   }
 });
 
+/**
+ * POST /problems/:problem_id/solve
+ * Human resolver submits a solution. Creates a Solution record, marks problem
+ * as solution_ready, and fires the agent's callback_url if set.
+ */
+router.post('/:problem_id/solve', async (req: Request, res: Response) => {
+  const { problem_id } = req.params;
+  const {
+    title,
+    explanation,
+    steps = [],
+    code_patch,
+    verification_command,
+    verification_expected_output,
+    author_confirmed_env,
+    failure_modes = [],
+    written_from = 'personal_experience',
+    resolver_address,
+    resolver_email,
+    resolver_name,
+    problem_signatures = [],
+    affected_stacks = [],
+    price_usdc = '0.03',
+  } = req.body;
+
+  if (!title || !explanation) {
+    return res.status(400).json({
+      error: { code: 'INVALID_REQUEST', message: 'title and explanation are required.' },
+    });
+  }
+
+  try {
+    const problem = await prisma.problem.findUnique({ where: { id: problem_id } });
+    if (!problem) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Problem not found.' } });
+    }
+    if (problem.status === 'solution_ready' || problem.status === 'solved') {
+      return res.status(409).json({ error: { code: 'CONFLICT', message: 'Problem already has a solution.' } });
+    }
+
+    // Upsert resolver as a User — prefer stacksAddress (wallet auth), fall back to email
+    let resolver;
+    if (resolver_address) {
+      resolver = await prisma.user.upsert({
+        where: { stacksAddress: resolver_address },
+        create: { stacksAddress: resolver_address, name: resolver_name ?? 'Anonymous Resolver', email: resolver_email ?? null },
+        update: {},
+      });
+    } else {
+      const email = resolver_email ?? 'anonymous@quash.io';
+      resolver = await prisma.user.upsert({
+        where: { email },
+        create: { email, name: resolver_name ?? 'Anonymous Resolver' },
+        update: {},
+      });
+    }
+
+    // Build structured fix blob
+    const structuredFixJson = JSON.stringify({
+      explanation,
+      steps,
+      code_patch: code_patch ?? null,
+      verification_command: verification_command ?? null,
+      verification_expected_output: verification_expected_output ?? null,
+      author_confirmed_env: author_confirmed_env ?? null,
+      failure_modes,
+      written_from,
+    });
+
+    // Derive signatures from error type if not provided
+    const signatures: string[] = problem_signatures.length > 0
+      ? problem_signatures
+      : [problem.errorType.toLowerCase().replace(/[^a-z0-9]+/g, '-')];
+
+    // Derive affected stacks from the original agent query if not provided
+    let stacks: string[] = affected_stacks.length > 0 ? affected_stacks : [];
+    if (stacks.length === 0) {
+      try {
+        const queryData = JSON.parse(problem.fullQueryJson);
+        const distro = queryData?.environment?.os?.distro;
+        const family = queryData?.environment?.os?.family;
+        if (distro) stacks.push(distro);
+        if (family && family !== distro) stacks.push(family);
+      } catch { /* use empty */ }
+    }
+
+    const solution = await prisma.solution.create({
+      data: {
+        title,
+        authorId: resolver.id,
+        structuredFixJson,
+        problemSignatures: signatures,
+        affectedStacks: stacks,
+        successRate: 0.0,
+        totalUses: 0,
+        priceUsdc: String(price_usdc),
+      },
+    });
+
+    await prisma.problem.update({
+      where: { id: problem_id },
+      data: { status: 'solution_ready', solutionId: solution.id },
+    });
+
+    // Notify agent callback
+    if (problem.callbackUrl) {
+      sendCallback(problem.callbackUrl, {
+        event: 'solution_ready',
+        problem_id,
+        solution_id: solution.id,
+        title: solution.title,
+        message: 'A human expert has resolved your problem. Call POST /solve to unlock the full solution.',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return res.status(201).json({
+      solution_id: solution.id,
+      problem_id,
+      status: 'solution_ready',
+      message: 'Solution submitted. The agent has been notified and can now unlock it via POST /solve.',
+    });
+  } catch (err) {
+    console.error('[POST /problems/:id/solve] Error:', err);
+    return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Failed to submit solution.' } });
+  }
+});
+
 export default router;

@@ -6,6 +6,7 @@ import solveRouter from './routes/solve';
 import problemsRouter from './routes/problems';
 import feedbackRouter from './routes/feedback';
 import webhooksRouter from './routes/webhooks';
+import authRouter from './routes/auth';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', api: 'QuashAPI v1.0', ts: new Date().toISOString() });
 });
 
+app.use('/auth', authRouter);
 app.use('/solutions', solutionsRouter);
 app.use('/solve', solveRouter);
 app.use('/problems', problemsRouter);

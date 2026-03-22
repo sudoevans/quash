@@ -21,7 +21,7 @@ export default function LandingPage() {
           <Link href="#solutions" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Solutions</Link>
           <Link href="#pricing" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Pricing</Link>
           <Link href="/api-reference" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">API</Link>
-          <Link href="/dashboard" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Login</Link>
+          <Link href="/onboard" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Login</Link>
         </nav>
         <button className="font-mono text-xs uppercase tracking-widest px-6 py-2 bg-[var(--ink-primary)] text-[var(--surface-base)] border border-[var(--ink-primary)] hover:opacity-80 transition-opacity">
           Join Waitlist

@@ -1,43 +1,211 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
-import { Problem } from '@/lib/types';
+import { useRouter } from 'next/navigation';
+import { URGENCY_CONFIG, type Problem, type Urgency } from '@/lib/types';
+import { getStoredAddress, shortAddress } from '@/lib/auth';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
-const STACK_DOMAINS = [
-  'shell','alpine','debian','ubuntu','docker','kubernetes',
-  'node','python','go','rust','java','ruby','php',
-  'react','vite','next','nuxt','svelte',
-  'postgresql','mysql','sqlite','redis','mongodb',
-  'github-actions','circleci','langchain','anthropic-api','openai-api',
-];
+// CSS-safe urgency dot colors (decorative only — not in design token set)
+const URGENCY_DOT: Record<Urgency, string> = {
+  critical: '#ef4444',
+  urgent:   '#f97316',
+  standard: '#eab308',
+  deep:     '#60a5fa',
+};
 
-// Mock Ledger Earnings to show embedded rather than a separate page
-const MOCK_EARNINGS = [
-  { id: 'sol_abc123', title: 'Use awk instead of sed on Alpine', uses: 312, rate: 0.87, earned: '7.49' },
-  { id: 'sol_def456', title: 'Fix ESM/CJS interop in Vite 5 for legacy modules', uses: 89, rate: 0.74, earned: '2.13' },
-  { id: 'sol_ghi789', title: 'Resolve ECONNREFUSED on Docker host networking (Linux)', uses: 47, rate: 0.91, earned: '1.12' },
-];
+type SortKey = 'newest' | 'highest' | 'expiring';
+type TabView = 'problems' | 'earnings' | 'solutions';
+
+interface EarningRow {
+  solution_id: string;
+  title: string;
+  problem_signatures: string[];
+  affected_stacks: string[];
+  success_rate: number;
+  total_uses: number;
+  paid_unlocks: number;
+  price_usdc: string;
+  earned_usdc: string;
+  created_at: string;
+}
+
+interface SolutionEntry {
+  solution_id: string;
+  title: string;
+  author: string;
+  problem_signatures: string[];
+  affected_stacks: string[];
+  success_rate: number;
+  total_uses: number;
+  price_usdc: string;
+  created_at: string;
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function timeAgo(iso: string) {
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  return `${Math.floor(diff / 3600)}h ago`;
+}
+
+function timeLeft(iso: string) {
+  const diff = Math.floor((new Date(iso).getTime() - Date.now()) / 1000);
+  if (diff <= 0) return { label: 'Expired', urgent: true };
+  if (diff < 300) return { label: `${Math.floor(diff / 60)}m ${diff % 60}s`, urgent: true };
+  if (diff < 3600) return { label: `${Math.floor(diff / 60)}m`, urgent: false };
+  return { label: `${Math.floor(diff / 3600)}h`, urgent: false };
+}
+
+function sortProblems(list: Problem[], key: SortKey): Problem[] {
+  return [...list].sort((a, b) => {
+    if (key === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    if (key === 'highest') return parseFloat(b.bountyAmount ?? '0') - parseFloat(a.bountyAmount ?? '0');
+    if (key === 'expiring') return new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime();
+    return 0;
+  });
+}
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+function UrgencyPill({ urgency }: { urgency: Urgency }) {
+  const cfg = URGENCY_CONFIG[urgency];
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-[var(--rule)] font-mono text-[10px] uppercase tracking-widest text-[var(--ink-secondary)]">
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: URGENCY_DOT[urgency] }} />
+      {cfg.label}
+    </span>
+  );
+}
+
+function StatusPill({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    paid:     'text-[var(--green)] border-[var(--green-dim)]',
+    pending:  'text-[var(--ink-secondary)] border-[var(--rule)]',
+    disputed: 'text-[#ef4444] border-[#3a1a1a]',
+  };
+  return (
+    <span className={`inline-flex px-2.5 py-0.5 rounded-full border font-mono text-[10px] uppercase tracking-widest ${styles[status] ?? styles.pending}`}>
+      {status}
+    </span>
+  );
+}
+
+function EmptyDetail() {
+  return (
+    <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-8">
+      <div className="w-10 h-10 rounded-full border border-[var(--rule)] flex items-center justify-center">
+        <span className="font-mono text-[var(--ink-tertiary)] text-lg leading-none">↖</span>
+      </div>
+      <p className="font-mono text-[10px] text-[var(--ink-tertiary)] uppercase tracking-widest">
+        Select a problem to see details
+      </p>
+    </div>
+  );
+}
+
+function EmptyList() {
+  return (
+    <div className="flex flex-col items-center justify-center py-24 gap-2 text-center px-8">
+      <p className="text-sm text-[var(--ink-secondary)]">No open problems right now.</p>
+      <p className="font-mono text-[11px] text-[var(--ink-tertiary)]">
+        Check back in a moment — agents post errors continuously.
+      </p>
+    </div>
+  );
+}
+
+// ─── Main Page ───────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
+  const router = useRouter();
+
+  const [walletAddress, setWalletAddress] = useState('');
+
+  const [tab, setTab] = useState<TabView>('problems');
   const [problems, setProblems] = useState<Problem[]>([]);
+  const [selected, setSelected] = useState<Problem | null>(null);
+  const [search, setSearch] = useState('');
+  const [urgencyFilter, setUrgencyFilter] = useState<Urgency | 'all'>('all');
+  const [sort, setSort] = useState<SortKey>('newest');
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('');
-  const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
-  const [activeProblem, setActiveProblem] = useState<Problem | null>(null);
-  const [activeView, setActiveView] = useState<'dispatch' | 'ledger'>('dispatch');
+  const [claiming, setClaiming] = useState(false);
+
+  // Auth guard — redirect to onboard if no wallet
+  useEffect(() => {
+    const addr = getStoredAddress();
+    if (!addr) {
+      router.replace('/onboard');
+    } else {
+      setWalletAddress(addr);
+    }
+  }, [router]);
+
+  // Earnings state
+  const [earningsRows, setEarningsRows] = useState<EarningRow[]>([]);
+  const [earningsTotals, setEarningsTotals] = useState({ earned: '0.0000', uses: 0 });
+  const [earningsLoading, setEarningsLoading] = useState(false);
+
+  const fetchEarnings = useCallback(async (address: string) => {
+    if (!address) return;
+    setEarningsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/solutions/earnings?stacksAddress=${encodeURIComponent(address)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setEarningsRows(data.solutions ?? []);
+        setEarningsTotals({ earned: data.total_earned_usdc ?? '0.0000', uses: data.total_uses ?? 0 });
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setEarningsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'earnings' && walletAddress) fetchEarnings(walletAddress);
+  }, [tab, walletAddress, fetchEarnings]);
+
+  // Solutions registry state
+  const [solutions, setSolutions] = useState<SolutionEntry[]>([]);
+  const [solutionSearch, setSolutionSearch] = useState('');
+  const [solutionsLoading, setSolutionsLoading] = useState(false);
+  const [expandedSolution, setExpandedSolution] = useState<string | null>(null);
+
+  const fetchSolutions = useCallback(async (q?: string) => {
+    setSolutionsLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: '50' });
+      if (q) params.set('q', q);
+      const res = await fetch(`${API_BASE}/solutions?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSolutions(data.results ?? []);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setSolutionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'solutions') fetchSolutions(solutionSearch || undefined);
+  }, [tab, fetchSolutions, solutionSearch]);
 
   const fetchProblems = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/problems?status=open`);
+      const res = await fetch(`${API_BASE}/problems?status=open&limit=100`);
       if (res.ok) {
         const data = await res.json();
         setProblems(data.problems ?? []);
       }
-    } catch (e) {
-      // Fallback
+    } catch {
+      // silently fail — list stays as-is
     } finally {
       setLoading(false);
     }
@@ -45,239 +213,520 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchProblems();
-    const interval = setInterval(fetchProblems, 15000);
+    const interval = setInterval(fetchProblems, 15_000);
     return () => clearInterval(interval);
   }, [fetchProblems]);
 
-  const handleClaim = async (id: string) => {
+  const filtered = sortProblems(
+    problems.filter(p => {
+      const matchesSearch =
+        !search ||
+        p.errorType.toLowerCase().includes(search.toLowerCase()) ||
+        p.errorMessage.toLowerCase().includes(search.toLowerCase());
+      const matchesUrgency = urgencyFilter === 'all' || p.urgency === urgencyFilter;
+      return matchesSearch && matchesUrgency;
+    }),
+    sort,
+  );
+
+  async function handleClaim(problem: Problem) {
+    setClaiming(true);
     try {
-      await fetch(`${API_BASE}/problems/${id}/claim`, { method: 'POST' });
-      await fetchProblems();
-      if (activeProblem?.id === id) setActiveProblem(null);
-    } catch {}
-  };
-
-  const toggleDomain = (d: string) =>
-    setSelectedDomains(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
-
-  const filtered = problems.filter(p => {
-    const matchesText = !filter || p.errorMessage.toLowerCase().includes(filter.toLowerCase());
-    const matchesDomain = selectedDomains.length === 0 || (p.stack ?? []).some(s => selectedDomains.includes(s));
-    return matchesText && matchesDomain;
-  });
-
-  const totalEarned = MOCK_EARNINGS.reduce((s, e) => s + parseFloat(e.earned), 0).toFixed(2);
+      await fetch(`${API_BASE}/problems/${problem.id}/claim`, { method: 'POST' });
+    } catch {
+      // proceed anyway — navigate to solve page regardless
+    } finally {
+      setClaiming(false);
+      router.push(`/problems/${problem.id}/solve`);
+    }
+  }
 
   return (
-    <div className="flex h-screen bg-[var(--surface-base)] text-[var(--ink-primary)] overflow-hidden font-serif selection:bg-[var(--green)] selection:text-[var(--ink-primary)]">
-      
-      {/* ─── Sidebar ──────────────────────────────────────────────────────── */}
-      <aside className="w-72 shrink-0 border-r border-[var(--rule)] p-6 flex flex-col gap-8 overflow-y-auto bg-[var(--surface-base)]">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--ink-primary)]">Quash</h1>
-          <p className="text-xs font-mono text-[var(--ink-secondary)] mt-1 uppercase tracking-widest">Resolver Terminal</p>
-        </div>
+    <div className="min-h-screen bg-[var(--surface-base)] text-[var(--ink-primary)] flex flex-col">
 
-        {/* Global Nav */}
-        <nav className="flex flex-col gap-2">
-          <button 
-            onClick={() => setActiveView('dispatch')}
-            className={`text-left text-sm px-4 py-3 rounded-none font-mono tracking-wide transition-colors ${
-              activeView === 'dispatch' 
-                ? 'bg-[var(--surface-inset)] text-[var(--green)] border-l-2 border-[var(--green)]' 
-                : 'text-[var(--ink-secondary)] hover:bg-[var(--surface-raised)] hover:text-[var(--ink-primary)] border-l-2 border-transparent'
-            }`}
-          >
-            Live Dispatch
-          </button>
-          <button 
-            onClick={() => setActiveView('ledger')}
-            className={`text-left text-sm px-4 py-3 rounded-none font-mono tracking-wide transition-colors ${
-              activeView === 'ledger' 
-                ? 'bg-[var(--surface-inset)] text-[var(--green)] border-l-2 border-[var(--green)]' 
-                : 'text-[var(--ink-secondary)] hover:bg-[var(--surface-raised)] hover:text-[var(--ink-primary)] border-l-2 border-transparent'
-            }`}
-          >
-            Earnings Ledger
-          </button>
+      {/* ── TopBar ─────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-50 flex items-center justify-between px-6 h-14 border-b border-[var(--rule)] bg-[var(--surface-base)]">
+        <span className="font-mono text-sm tracking-tight text-[var(--ink-primary)]">Quash</span>
+
+        <nav className="flex items-center gap-1 p-1 rounded-full border border-[var(--rule)] bg-[var(--surface-inset)]">
+          {(['problems', 'solutions', 'earnings'] as TabView[]).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-4 py-1.5 rounded-full font-mono text-[11px] uppercase tracking-widest transition-colors ${
+                tab === t
+                  ? 'bg-[var(--surface-raised)] text-[var(--ink-primary)]'
+                  : 'text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)]'
+              }`}
+            >
+              {t}
+            </button>
+          ))}
         </nav>
 
-        {/* Domain filter overrides */}
-        <div className="mt-4">
-          <p className="font-mono text-[10px] text-[var(--ink-tertiary)] uppercase tracking-[0.15em] mb-4">Competency Vectors</p>
-          <div className="flex flex-wrap gap-2">
-            {STACK_DOMAINS.slice(0, 12).map(d => (
-              <button
-                key={d}
-                onClick={() => toggleDomain(d)}
-                className={`text-left text-xs px-2.5 py-1.5 transition-colors font-mono ${
-                  selectedDomains.includes(d)
-                    ? 'bg-[var(--green)] text-[var(--surface-base)] border border-[var(--green)]'
-                    : 'text-[var(--ink-secondary)] bg-[var(--surface-inset)] border border-[var(--rule)] hover:border-[var(--ink-secondary)]'
-                }`}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* User Mini-Ledger Card */}
-        <div className="mt-auto bg-[var(--surface-raised)] border border-[var(--rule)] p-4">
-          <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--ink-tertiary)] mb-1">Available Balance</p>
-          <p className="text-2xl font-serif text-[var(--green)]">{totalEarned} <span className="text-sm text-[var(--ink-secondary)]">USDCx</span></p>
-          <button className="w-full mt-4 bg-[var(--surface-inset)] text-[var(--ink-primary)] border border-[var(--rule)] px-4 py-2 font-mono text-xs uppercase hover:bg-[var(--ink-primary)] hover:text-[var(--surface-base)] transition-colors">
+        <div className="flex items-center gap-3">
+          {walletAddress && (
+            <a
+              href={`https://explorer.hiro.so/address/${walletAddress}?chain=testnet`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-[11px] text-[var(--ink-secondary)] px-3 py-1.5 rounded-full border border-[var(--rule)] bg-[var(--surface-inset)] hover:text-[var(--green)] hover:border-[var(--green-dim)] transition-colors"
+            >
+              {shortAddress(walletAddress)}
+            </a>
+          )}
+          <button className="font-mono text-[11px] uppercase tracking-widest px-4 py-1.5 rounded-full border border-[var(--rule)] text-[var(--ink-secondary)] hover:text-[var(--ink-primary)] hover:border-[var(--ink-tertiary)] transition-colors">
             Withdraw
           </button>
         </div>
-      </aside>
+      </header>
 
-      {/* ─── Main Content ──────────────────────────────────────────────────── */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-[var(--surface-base)]">
-        
-        {/* Topbar */}
-        <header className="flex items-center justify-between gap-3 p-6 border-b border-[var(--rule)]">
-          <div className="flex items-center gap-3 w-1/2">
-            <span className="font-mono text-xs text-[var(--ink-tertiary)]">/</span>
-            <input
-              type="text"
-              placeholder="Filter errors by keyword or signature..."
-              value={filter}
-              onChange={e => setFilter(e.target.value)}
-              className="flex-1 bg-transparent border-none text-sm font-mono text-[var(--ink-primary)] placeholder-[var(--ink-tertiary)] focus:outline-none focus:ring-0"
-            />
-          </div>
-          <div className="flex items-center gap-3 px-4 py-2 border border-[var(--rule)] bg-[var(--surface-inset)]">
-            <span className="w-2 h-2 rounded-full bg-[var(--green)] animate-pulse" />
-            <span className="font-mono text-xs text-[var(--ink-secondary)] uppercase tracking-widest">Connection Stable</span>
-          </div>
-        </header>
+      {/* ── Problems Tab ───────────────────────────────────────────────── */}
+      {tab === 'problems' && (
+        <div className="flex flex-col flex-1 overflow-hidden">
 
-        {activeView === 'dispatch' ? (
-          <div className="flex-1 flex overflow-hidden">
-            {/* Queue List */}
-            <div className="w-1/2 md:w-5/12 border-r border-[var(--rule)] overflow-y-auto flex flex-col">
-              <div className="p-4 border-b border-[var(--rule)] bg-[var(--surface-raised)] sticky top-0">
-                <p className="font-mono text-xs text-[var(--ink-tertiary)] uppercase tracking-[0.1em]">Signal Queue ({filtered.length})</p>
+          {/* FilterBar */}
+          <div className="flex flex-wrap items-center gap-3 px-6 py-4 border-b border-[var(--rule)]">
+            <div className="relative flex-1 min-w-[180px]">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-tertiary)] text-sm select-none">⌕</span>
+              <input
+                type="text"
+                placeholder="Search errors..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-8 pr-4 py-2 rounded-lg bg-[var(--surface-inset)] border border-[var(--rule)] font-mono text-xs text-[var(--ink-primary)] placeholder-[var(--ink-tertiary)] focus:outline-none focus:border-[var(--green)] transition-colors"
+              />
+            </div>
+
+            <div className="flex items-center gap-1">
+              {(['all', 'critical', 'urgent', 'standard', 'deep'] as const).map(u => (
+                <button
+                  key={u}
+                  onClick={() => setUrgencyFilter(u)}
+                  className={`px-3 py-1.5 rounded-full font-mono text-[10px] uppercase tracking-widest transition-colors border ${
+                    urgencyFilter === u
+                      ? 'bg-[var(--surface-raised)] border-[var(--ink-tertiary)] text-[var(--ink-primary)]'
+                      : 'border-transparent text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)]'
+                  }`}
+                >
+                  {u === 'all' ? 'All' : URGENCY_CONFIG[u].label}
+                </button>
+              ))}
+            </div>
+
+            <select
+              value={sort}
+              onChange={e => setSort(e.target.value as SortKey)}
+              className="font-mono text-xs text-[var(--ink-secondary)] bg-[var(--surface-inset)] border border-[var(--rule)] rounded-lg px-3 py-2 focus:outline-none focus:border-[var(--green)] transition-colors"
+            >
+              <option value="newest">Newest</option>
+              <option value="highest">Highest Reward</option>
+              <option value="expiring">Expiring Soon</option>
+            </select>
+          </div>
+
+          {/* Two-pane */}
+          <div className="flex flex-1 min-h-0">
+
+            {/* Problem list */}
+            <div className="w-2/5 border-r border-[var(--rule)] overflow-y-auto flex flex-col">
+              <div className="sticky top-0 px-6 py-3 border-b border-[var(--rule)] bg-[var(--surface-base)] flex items-center justify-between z-10">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)]">
+                  Open Problems
+                </span>
+                <span className="font-mono text-[10px] text-[var(--ink-tertiary)] bg-[var(--surface-inset)] px-2 py-0.5 rounded-full border border-[var(--rule)]">
+                  {loading ? '…' : filtered.length}
+                </span>
               </div>
-              
+
               {loading ? (
-                <div className="p-8 text-center font-mono tracking-widest text-[var(--ink-tertiary)] opacity-50 uppercase text-xs">
-                  Scanning for anomalies...
+                <div className="flex items-center justify-center py-16">
+                  <span className="font-mono text-xs text-[var(--ink-tertiary)]">Loading…</span>
                 </div>
               ) : filtered.length === 0 ? (
-                <div className="p-8 text-center font-mono text-xs text-[var(--ink-tertiary)]">
-                  Zero anomalies detected in specified vectors.
+                <EmptyList />
+              ) : (
+                <ul>
+                  {filtered.map(problem => {
+                    const expiry = timeLeft(problem.expiresAt);
+                    const isActive = selected?.id === problem.id;
+                    return (
+                      <li
+                        key={problem.id}
+                        onClick={() => setSelected(problem)}
+                        className={`flex items-start gap-3 px-5 py-4 border-b border-[var(--rule)] cursor-pointer transition-colors border-l-2 ${
+                          isActive
+                            ? 'bg-[var(--surface-raised)] border-l-[var(--green)]'
+                            : 'border-l-transparent hover:bg-[var(--surface-raised)]'
+                        }`}
+                      >
+                        <div
+                          className="mt-1.5 w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: URGENCY_DOT[problem.urgency] }}
+                        />
+
+                        <div className="flex-1 min-w-0">
+                          <p className="font-mono text-xs font-medium text-[var(--ink-primary)] truncate">
+                            {problem.errorType}
+                          </p>
+                          <p className="font-mono text-[11px] text-[var(--ink-tertiary)] mt-0.5 line-clamp-2 leading-relaxed">
+                            {problem.errorMessage}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className="font-mono text-[10px] text-[var(--ink-tertiary)]">
+                              {timeAgo(problem.createdAt)}
+                            </span>
+                            <span className="text-[var(--rule)]">·</span>
+                            <span
+                              className="font-mono text-[10px]"
+                              style={{ color: expiry.urgent ? '#ef4444' : 'var(--ink-tertiary)' }}
+                            >
+                              exp {expiry.label}
+                            </span>
+                          </div>
+                        </div>
+
+                        {problem.bountyAmount && (
+                          <span className="flex-shrink-0 font-mono text-[10px] text-[var(--green)] px-2 py-1 rounded-full border border-[var(--green-dim)] bg-[var(--surface-inset)] whitespace-nowrap">
+                            ${problem.bountyAmount}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+
+            {/* Detail panel */}
+            <div className="flex-1 overflow-y-auto">
+              {selected ? (
+                <div className="p-8 max-w-xl">
+
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-6 mb-6">
+                    <div className="min-w-0">
+                      <h2 className="font-mono text-sm font-medium text-[var(--ink-primary)] mb-2">
+                        {selected.errorType}
+                      </h2>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-[10px] text-[var(--ink-tertiary)]">
+                          #{selected.id.slice(0, 8)}
+                        </span>
+                        <span className="text-[var(--rule)]">·</span>
+                        <UrgencyPill urgency={selected.urgency} />
+                        <span className="text-[var(--rule)]">·</span>
+                        <span className="font-mono text-[10px] text-[var(--ink-tertiary)]">
+                          {URGENCY_CONFIG[selected.urgency].window} window
+                        </span>
+                      </div>
+                    </div>
+
+                    {selected.bountyAmount && (
+                      <div className="flex-shrink-0 text-right">
+                        <div className="font-mono text-2xl text-[var(--green)] leading-none">
+                          ${selected.bountyAmount}
+                        </div>
+                        <div className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-1 uppercase tracking-widest">
+                          reward
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Error block */}
+                  <div className="mb-6">
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">
+                      Error
+                    </p>
+                    <pre className="bg-[var(--surface-inset)] border border-[var(--rule)] rounded-lg p-4 font-mono text-xs text-[var(--ink-secondary)] leading-relaxed overflow-x-auto whitespace-pre-wrap break-words">
+                      {selected.errorMessage}
+                    </pre>
+                  </div>
+
+                  {/* Environment tags */}
+                  {selected.stack && selected.stack.length > 0 && (
+                    <div className="mb-6">
+                      <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">
+                        Environment
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {selected.stack.map(tag => (
+                          <span
+                            key={tag}
+                            className="font-mono text-[10px] px-2.5 py-1 rounded-full border border-[var(--rule)] text-[var(--ink-secondary)]"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Timing */}
+                  <div className="mb-8">
+                    {(() => {
+                      const expiry = timeLeft(selected.expiresAt);
+                      return (
+                        <p className="font-mono text-[11px] text-[var(--ink-tertiary)]">
+                          Posted {timeAgo(selected.createdAt)}
+                          <span className="mx-2 text-[var(--rule)]">·</span>
+                          <span style={{ color: expiry.urgent ? '#ef4444' : 'inherit' }}>
+                            Expires in {expiry.label}
+                          </span>
+                        </p>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => handleClaim(selected)}
+                      disabled={claiming}
+                      className="w-full py-3 rounded-full bg-[var(--green)] text-[var(--surface-base)] font-mono text-xs uppercase tracking-widest hover:opacity-90 disabled:opacity-50 transition-opacity"
+                    >
+                      {claiming ? 'Claiming…' : 'Claim & Solve →'}
+                    </button>
+                    <button
+                      onClick={() => setSelected(null)}
+                      className="w-full py-3 rounded-full border border-[var(--rule)] text-[var(--ink-tertiary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-secondary)] hover:border-[var(--ink-tertiary)] transition-colors"
+                    >
+                      Pass
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <div className="flex flex-col">
-                  {filtered.map(p => (
-                    <button 
-                      key={p.id} 
-                      onClick={() => setActiveProblem(p)}
-                      className={`text-left p-6 border-b border-[var(--rule)] transition-colors ${
-                        activeProblem?.id === p.id 
-                          ? 'bg-[var(--surface-inset)] border-l-4 border-l-[var(--green)]' 
-                          : 'bg-transparent border-l-4 border-l-transparent hover:bg-[var(--surface-raised)]'
-                      }`}
+                <EmptyDetail />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Solutions Registry Tab ─────────────────────────────────────── */}
+      {tab === 'solutions' && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+
+          {/* Registry header + search */}
+          <div className="flex items-center gap-4 px-6 py-4 border-b border-[var(--rule)]">
+            <div className="relative flex-1 max-w-md">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink-tertiary)] text-sm select-none">⌕</span>
+              <input
+                type="text"
+                placeholder="Search solutions..."
+                value={solutionSearch}
+                onChange={e => setSolutionSearch(e.target.value)}
+                className="w-full pl-8 pr-4 py-2 rounded-lg bg-[var(--surface-inset)] border border-[var(--rule)] font-mono text-xs text-[var(--ink-primary)] placeholder-[var(--ink-tertiary)] focus:outline-none focus:border-[var(--green)] transition-colors"
+              />
+            </div>
+            <span className="font-mono text-[10px] text-[var(--ink-tertiary)] uppercase tracking-widest">
+              Solution Registry
+            </span>
+            <span className="font-mono text-[10px] text-[var(--ink-tertiary)] bg-[var(--surface-inset)] px-2 py-0.5 rounded-full border border-[var(--rule)]">
+              {solutionsLoading ? '…' : solutions.length}
+            </span>
+          </div>
+
+          {/* Solutions list */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {solutionsLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <span className="font-mono text-xs text-[var(--ink-tertiary)]">Loading…</span>
+              </div>
+            ) : solutions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 gap-2 text-center">
+                <p className="text-sm text-[var(--ink-secondary)]">No solutions in the registry yet.</p>
+                <p className="font-mono text-[11px] text-[var(--ink-tertiary)]">
+                  Claim a problem from the Problems tab and submit your fix.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-w-4xl">
+                {solutions.map(sol => {
+                  const isExpanded = expandedSolution === sol.solution_id;
+                  return (
+                    <div
+                      key={sol.solution_id}
+                      className="rounded-lg border border-[var(--rule)] bg-[var(--surface-raised)] overflow-hidden"
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="font-mono text-xs text-[var(--green)]">{p.id.split('-')[0]}</span>
-                        <span className="font-mono text-xs text-[var(--ink-tertiary)]">{p.bountyAmount || 'Open'} USDCx</span>
-                      </div>
-                      <p className="font-mono text-sm line-clamp-2 text-[var(--ink-primary)] mb-3">{p.errorMessage}</p>
-                      
-                      {p.stack && (
-                        <div className="flex gap-2 flex-wrap">
-                          {p.stack.slice(0,3).map(s => (
-                            <span key={s} className="px-2 py-0.5 bg-[var(--surface-raised)] text-[var(--ink-secondary)] text-[10px] font-mono uppercase border border-[var(--rule)]">
-                              {s}
+                      {/* Row */}
+                      <button
+                        onClick={() => setExpandedSolution(isExpanded ? null : sol.solution_id)}
+                        className="w-full flex items-center gap-4 px-5 py-4 text-left hover:bg-[var(--surface-inset)] transition-colors"
+                      >
+                        {/* Title + author */}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-mono text-xs font-medium text-[var(--ink-primary)] truncate">
+                            {sol.title}
+                          </p>
+                          <p className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-0.5">
+                            by {sol.author}
+                          </p>
+                        </div>
+
+                        {/* Stack tags */}
+                        <div className="hidden md:flex items-center gap-1.5 flex-wrap max-w-[200px]">
+                          {sol.affected_stacks.slice(0, 3).map(tag => (
+                            <span key={tag} className="font-mono text-[10px] px-2 py-0.5 rounded-full border border-[var(--rule)] text-[var(--ink-tertiary)]">
+                              {tag}
                             </span>
                           ))}
                         </div>
+
+                        {/* Stats */}
+                        <div className="hidden md:flex items-center gap-4 flex-shrink-0">
+                          <div className="text-right">
+                            <div className="font-mono text-xs text-[var(--ink-primary)]">
+                              {(sol.success_rate * 100).toFixed(0)}%
+                            </div>
+                            <div className="font-mono text-[10px] text-[var(--ink-tertiary)]">success</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-mono text-xs text-[var(--ink-primary)]">{sol.total_uses}</div>
+                            <div className="font-mono text-[10px] text-[var(--ink-tertiary)]">uses</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-mono text-xs text-[var(--green)]">${sol.price_usdc}</div>
+                            <div className="font-mono text-[10px] text-[var(--ink-tertiary)]">price</div>
+                          </div>
+                        </div>
+
+                        <span className="font-mono text-[10px] text-[var(--ink-tertiary)] flex-shrink-0">
+                          {isExpanded ? '▲' : '▼'}
+                        </span>
+                      </button>
+
+                      {/* Expanded detail */}
+                      {isExpanded && (
+                        <div className="border-t border-[var(--rule)] px-5 py-4 space-y-3">
+                          <div className="flex flex-wrap gap-2">
+                            <div>
+                              <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-1.5">Signatures</p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {sol.problem_signatures.map(sig => (
+                                  <span key={sig} className="font-mono text-[10px] px-2 py-0.5 rounded-full border border-[var(--rule)] text-[var(--ink-secondary)]">
+                                    {sig}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-6 text-[10px] font-mono text-[var(--ink-tertiary)]">
+                            <span>ID: <span className="text-[var(--ink-secondary)]">{sol.solution_id}</span></span>
+                            <span>Added: <span className="text-[var(--ink-secondary)]">{new Date(sol.created_at).toLocaleDateString()}</span></span>
+                          </div>
+                          <p className="font-mono text-[10px] text-[var(--ink-tertiary)]">
+                            Full solution unlocked via <span className="text-[var(--green)]">POST /solve</span> with payment.
+                          </p>
+                        </div>
                       )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Active Problem Detail */}
-            <div className="flex-1 bg-[var(--surface-inset)] overflow-y-auto relative">
-              {activeProblem ? (
-                <div className="p-10 max-w-3xl animate-fade-in">
-                  <div className="flex justify-between items-start mb-8">
-                    <div>
-                      <p className="font-mono text-xs text-[var(--ink-tertiary)] uppercase tracking-widest mb-2">Target Acquired</p>
-                      <h2 className="text-3xl font-serif text-[var(--ink-primary)]">{activeProblem.id}</h2>
                     </div>
-                    <div className="text-right">
-                      <p className="text-3xl font-serif text-[var(--green)]">{activeProblem.bountyAmount || '--'}</p>
-                      <p className="font-mono text-[10px] text-[var(--ink-secondary)] uppercase">Reward (USDCx)</p>
-                    </div>
-                  </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
-                  {/* Terminal output mockup for the error */}
-                  <div className="mb-10 bg-[var(--surface-base)] border border-[var(--rule)] p-6 font-mono text-sm text-[var(--ink-secondary)] leading-relaxed overflow-x-auto">
-                    <p className="text-[var(--ink-primary)] mb-4">{activeProblem.errorMessage}</p>
-                    <p className="text-[var(--ink-tertiary)] opacity-70">
-                      &gt; Process exited with code 1<br/>
-                      &gt; Stack trace localized to 3 files.<br/>
-                      &gt; Agent halted execution. Requesting human override.
-                    </p>
-                  </div>
+      {/* ── Earnings Tab ───────────────────────────────────────────────── */}
+      {tab === 'earnings' && (
+        <div className="flex-1 overflow-y-auto px-8 py-8 max-w-4xl w-full mx-auto">
 
-                  <div className="flex gap-4">
-                    <button 
-                      onClick={() => handleClaim(activeProblem.id)}
-                      className="bg-[var(--green)] text-[var(--surface-base)] font-mono text-sm uppercase px-8 py-4 font-bold tracking-widest hover:bg-[var(--ink-primary)] transition-colors"
-                    >
-                      Resolve & Claim
-                    </button>
-                    <button 
-                      onClick={() => setActiveProblem(null)}
-                      className="bg-transparent text-[var(--ink-primary)] border border-[var(--rule)] font-mono text-sm uppercase px-8 py-4 tracking-widest hover:bg-[var(--surface-raised)] transition-colors"
-                    >
-                      Skip Signal
-                    </button>
-                  </div>
-
-                </div>
+          {/* Wallet identity header */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-1">Resolver Identity</p>
+              {walletAddress ? (
+                <a
+                  href={`https://explorer.hiro.so/address/${walletAddress}?chain=testnet`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-xs text-[var(--ink-secondary)] hover:text-[var(--green)] transition-colors"
+                >
+                  {walletAddress} ↗
+                </a>
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center opacity-30">
-                  <p className="text-6xl font-serif mb-4 text-[var(--ink-tertiary)]">&not;</p>
-                  <p className="font-mono text-xs uppercase tracking-[0.2em] text-[var(--ink-tertiary)]">Awaiting Selection</p>
-                </div>
+                <p className="font-mono text-xs text-[var(--ink-tertiary)]">No wallet connected</p>
               )}
             </div>
+            <button
+              onClick={() => fetchEarnings(walletAddress)}
+              disabled={!walletAddress || earningsLoading}
+              className="px-4 py-2 rounded-full border border-[var(--rule)] font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)] hover:border-[var(--ink-tertiary)] disabled:opacity-40 transition-colors"
+            >
+              {earningsLoading ? '…' : 'Refresh'}
+            </button>
           </div>
-        ) : (
-          /* Ledger View */
-          <div className="flex-1 overflow-y-auto p-12 lg:px-24">
-            <h2 className="text-4xl font-serif text-[var(--ink-primary)] mb-2">Ledger</h2>
-            <p className="font-mono text-sm text-[var(--ink-secondary)] mb-12">Passive recursive yield from global library reads.</p>
 
-            <table className="w-full text-left font-mono">
-              <thead>
-                <tr className="border-b border-[var(--rule)] text-[var(--ink-tertiary)] text-xs uppercase tracking-widest">
-                  <th className="font-normal py-4 px-2">Solution Print</th>
-                  <th className="font-normal py-4 px-2">Global Uses</th>
-                  <th className="font-normal py-4 px-2 text-right">Yield (USDCx)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {MOCK_EARNINGS.map(e => (
-                  <tr key={e.id} className="border-b border-[var(--rule)] hover:bg-[var(--surface-inset)] transition-colors">
-                    <td className="py-5 px-2 text-sm text-[var(--ink-primary)] truncate max-w-md">{e.title}</td>
-                    <td className="py-5 px-2 text-sm text-[var(--ink-secondary)]">{e.uses}</td>
-                    <td className="py-5 px-2 text-sm text-[var(--green)] text-right">+{e.earned}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Stat chips */}
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            {[
+              { label: 'Total Earned', value: `${earningsTotals.earned} USDC` },
+              { label: 'Solutions Published', value: String(earningsRows.length) },
+              { label: 'Total Uses', value: String(earningsTotals.uses) },
+            ].map(stat => (
+              <div key={stat.label} className="rounded-lg border border-[var(--rule)] bg-[var(--surface-raised)] px-5 py-4">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">{stat.label}</div>
+                <div className={`font-mono text-lg ${stat.label === 'Total Earned' ? 'text-[var(--green)]' : 'text-[var(--ink-primary)]'}`}>
+                  {stat.value}
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-      </main>
+
+          {/* Solutions table */}
+          {!walletAddress ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-2">
+              <p className="font-mono text-xs text-[var(--ink-tertiary)]">Connect a wallet to view your earnings.</p>
+            </div>
+          ) : earningsLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <span className="font-mono text-xs text-[var(--ink-tertiary)]">Loading…</span>
+            </div>
+          ) : earningsRows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-2">
+              <p className="text-sm text-[var(--ink-secondary)]">No solutions found for this address.</p>
+              <p className="font-mono text-[11px] text-[var(--ink-tertiary)]">Claim a problem and submit a fix to start earning.</p>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-[var(--rule)] overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[var(--rule)] bg-[var(--surface-inset)]">
+                    {['Title', 'Stacks', 'Uses', 'Unlocks', 'Earned'].map(col => (
+                      <th key={col} className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)]">
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {earningsRows.map(row => (
+                    <tr key={row.solution_id} className="border-b border-[var(--rule)] last:border-b-0 hover:bg-[var(--surface-raised)] transition-colors">
+                      <td className="px-5 py-4 font-mono text-xs text-[var(--ink-primary)] max-w-[240px]">
+                        <p className="truncate">{row.title}</p>
+                        <p className="text-[10px] text-[var(--ink-tertiary)] mt-0.5">{row.solution_id.slice(0, 10)}</p>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {row.affected_stacks.slice(0, 2).map(s => (
+                            <span key={s} className="font-mono text-[10px] px-2 py-0.5 rounded-full border border-[var(--rule)] text-[var(--ink-tertiary)]">{s}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 font-mono text-xs text-[var(--ink-secondary)]">{row.total_uses}</td>
+                      <td className="px-5 py-4 font-mono text-xs text-[var(--ink-secondary)]">{row.paid_unlocks}</td>
+                      <td className="px-5 py-4 font-mono text-xs text-[var(--green)]">{row.earned_usdc} USDC</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
