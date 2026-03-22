@@ -55,12 +55,12 @@ export const AgentQuerySchema = z.object({
   }).optional(),
   attempts: z.array(z.object({
     fix: z.string(),
-    result: z.enum(['failed', 'partial']),
+    result: z.string().optional(),
     new_error: z.string().optional(),
   })).optional(),
   sandbox: z.object({
-    required: z.boolean(),
-    reproduce_with: z.array(z.string()).optional(),
+    required: z.boolean().optional(),
+    reproduce_with: z.union([z.array(z.string()), z.string()]).optional(),
     expected_error_output: z.string().optional(),
   }).optional(),
   agent: z.object({

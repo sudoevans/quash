@@ -55,12 +55,12 @@ exports.AgentQuerySchema = zod_1.z.object({
     }).optional(),
     attempts: zod_1.z.array(zod_1.z.object({
         fix: zod_1.z.string(),
-        result: zod_1.z.enum(['failed', 'partial']),
+        result: zod_1.z.string().optional(),
         new_error: zod_1.z.string().optional(),
     })).optional(),
     sandbox: zod_1.z.object({
-        required: zod_1.z.boolean(),
-        reproduce_with: zod_1.z.array(zod_1.z.string()).optional(),
+        required: zod_1.z.boolean().optional(),
+        reproduce_with: zod_1.z.union([zod_1.z.array(zod_1.z.string()), zod_1.z.string()]).optional(),
         expected_error_output: zod_1.z.string().optional(),
     }).optional(),
     agent: zod_1.z.object({
