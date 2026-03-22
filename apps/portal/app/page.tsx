@@ -2,31 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-
-function ClaudeIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path d="M12 3L20 18H4L12 3Z" stroke="currentColor" strokeWidth="1.5"/>
-      <path d="M8 14h8" stroke="currentColor" strokeWidth="1.5"/>
-    </svg>
-  );
-}
-
-function GeminiIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path d="M12 2C12 7 17 12 22 12C17 12 12 17 12 22C12 17 7 12 2 12C7 12 12 7 12 2Z" fill="currentColor"/>
-    </svg>
-  );
-}
-
-function CursorIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
-      <path d="M4 4l7 18 3-7 7-3L4 4Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-    </svg>
-  );
-}
+import Image from 'next/image';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
@@ -51,6 +27,7 @@ export default function LandingPage() {
         <div className="text-2xl font-serif tracking-tighter text-[var(--ink-primary)]">Quash</div>
         <nav className="hidden md:flex items-center gap-12">
           <Link href="#solutions" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Solutions</Link>
+          <Link href="#docs" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Docs</Link>
           <Link href="#pricing" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Pricing</Link>
           <Link href="/api-reference" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">API</Link>
           <Link href="/onboard" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Login</Link>
@@ -166,6 +143,45 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Docs Section */}
+        <section id="docs" className="px-8 py-24 border-b border-[var(--rule)]">
+          <div className="max-w-screen-xl mx-auto">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-12">Documentation</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-px border border-[var(--rule)] bg-[var(--rule)]">
+              <div className="bg-[var(--surface-base)] p-10">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-4">For Agents</div>
+                <h3 className="text-xl font-serif mb-4">MCP Plugin</h3>
+                <p className="text-sm text-[var(--ink-secondary)] leading-relaxed mb-8">
+                  Install the Quash plugin into Claude Code. Automatic error resolution — search, pay, apply, and report feedback without interrupting your workflow.
+                </p>
+                <Link href="#plugin" className="font-mono text-xs uppercase tracking-widest border-b border-[var(--ink-primary)] pb-1 hover:text-[var(--green)] hover:border-[var(--green)] transition-colors">
+                  Get the Plugin →
+                </Link>
+              </div>
+              <div className="bg-[var(--surface-base)] p-10">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-4">For Experts</div>
+                <h3 className="text-xl font-serif mb-4">Solving Bounties</h3>
+                <p className="text-sm text-[var(--ink-secondary)] leading-relaxed mb-8">
+                  Browse live error bounties, submit solutions, and earn STX instantly on resolution. Your solutions earn passively every time an agent references them.
+                </p>
+                <Link href="/onboard" className="font-mono text-xs uppercase tracking-widest border-b border-[var(--ink-primary)] pb-1 hover:text-[var(--green)] hover:border-[var(--green)] transition-colors">
+                  Join as Expert →
+                </Link>
+              </div>
+              <div className="bg-[var(--surface-base)] p-10">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-4">For Developers</div>
+                <h3 className="text-xl font-serif mb-4">REST API</h3>
+                <p className="text-sm text-[var(--ink-secondary)] leading-relaxed mb-8">
+                  Integrate Quash directly into your own agent pipelines. Full reference for solutions, problems, bounties, payments, and webhooks.
+                </p>
+                <Link href="/api-reference" className="font-mono text-xs uppercase tracking-widest border-b border-[var(--ink-primary)] pb-1 hover:text-[var(--green)] hover:border-[var(--green)] transition-colors">
+                  View API Reference →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Get the Plugin */}
         <section id="plugin" className="px-8 py-24 border-b border-[var(--rule)]">
           <div className="max-w-screen-xl mx-auto">
@@ -174,21 +190,21 @@ export default function LandingPage() {
             {/* AI tool tabs */}
             <div className="flex items-center gap-3 mb-10">
               {/* Claude Code — active */}
-              <div className="flex items-center gap-2 px-4 py-2 border border-[var(--green)] rounded-full text-[var(--green)]">
-                <ClaudeIcon className="w-4 h-4" />
-                <span className="font-mono text-xs">Claude Code</span>
+              <div className="flex items-center gap-2 px-4 py-2 border border-[var(--green)] rounded-full">
+                <Image src="/claude-ai-icon.png" alt="Claude" width={16} height={16} className="w-4 h-4 rounded-sm" />
+                <span className="font-mono text-xs text-[var(--green)]">Claude Code</span>
               </div>
 
               {/* Gemini — coming soon */}
-              <div className="relative flex items-center gap-2 px-4 py-2 border border-[var(--rule)] rounded-full opacity-50 cursor-not-allowed select-none">
-                <GeminiIcon className="w-4 h-4 text-[var(--ink-tertiary)]" />
+              <div className="flex items-center gap-2 px-4 py-2 border border-[var(--rule)] rounded-full opacity-50 cursor-not-allowed select-none">
+                <Image src="/google-gemini-icon.png" alt="Gemini" width={16} height={16} className="w-4 h-4" />
                 <span className="font-mono text-xs text-[var(--ink-tertiary)]">Gemini</span>
                 <span className="font-mono text-[9px] text-[var(--ink-tertiary)] border border-[var(--rule)] rounded-full px-1.5 py-0.5 ml-1">soon</span>
               </div>
 
               {/* Cursor — coming soon */}
-              <div className="relative flex items-center gap-2 px-4 py-2 border border-[var(--rule)] rounded-full opacity-50 cursor-not-allowed select-none">
-                <CursorIcon className="w-4 h-4 text-[var(--ink-tertiary)]" />
+              <div className="flex items-center gap-2 px-4 py-2 border border-[var(--rule)] rounded-full opacity-50 cursor-not-allowed select-none">
+                <Image src="/Cursor Logo.png" alt="Cursor" width={16} height={16} className="w-4 h-4" />
                 <span className="font-mono text-xs text-[var(--ink-tertiary)]">Cursor</span>
                 <span className="font-mono text-[9px] text-[var(--ink-tertiary)] border border-[var(--rule)] rounded-full px-1.5 py-0.5 ml-1">soon</span>
               </div>
@@ -263,7 +279,7 @@ export default function LandingPage() {
         <div className="flex flex-col gap-4">
           <div className="text-xl font-serif text-[var(--ink-primary)]">Quash</div>
           <div className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)]">
-            &copy; 2024 Quash. All rights reserved.
+            &copy; 2026 Quash. All rights reserved.
           </div>
         </div>
         <div className="flex flex-wrap gap-x-12 gap-y-4">
