@@ -132,6 +132,14 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const [walletAddress, setWalletAddress] = useState('');
+  const [stxPrice, setStxPrice] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch('https://api.coingecko.com/api/v3/simple/price?ids=blockstack&vs_currencies=usd')
+      .then(r => r.json())
+      .then(d => { if (d?.blockstack?.usd) setStxPrice(d.blockstack.usd); })
+      .catch(() => {});
+  }, []);
 
   const [tab, setTab] = useState<TabView>('problems');
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -396,7 +404,8 @@ export default function DashboardPage() {
 
                         {problem.bountyAmount && (
                           <span className="flex-shrink-0 font-mono text-[10px] text-[var(--green)] px-2 py-1 rounded-full border border-[var(--green-dim)] bg-[var(--surface-inset)] whitespace-nowrap">
-                            ${problem.bountyAmount}
+                            {problem.bountyAmount} STX
+                            {stxPrice ? ` · $${(parseFloat(problem.bountyAmount) * stxPrice).toFixed(2)}` : ''}
                           </span>
                         )}
                       </li>
@@ -433,9 +442,14 @@ export default function DashboardPage() {
                     {selected.bountyAmount && (
                       <div className="flex-shrink-0 text-right">
                         <div className="font-mono text-2xl text-[var(--green)] leading-none">
-                          ${selected.bountyAmount}
+                          {selected.bountyAmount} <span className="text-sm">STX</span>
                         </div>
-                        <div className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-1 uppercase tracking-widest">
+                        {stxPrice && (
+                          <div className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-0.5">
+                            ≈ ${(parseFloat(selected.bountyAmount) * stxPrice).toFixed(2)} USD
+                          </div>
+                        )}
+                        <div className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-0.5 uppercase tracking-widest">
                           reward
                         </div>
                       </div>
@@ -595,7 +609,7 @@ export default function DashboardPage() {
                             <div className="font-mono text-[10px] text-[var(--ink-tertiary)]">uses</div>
                           </div>
                           <div className="text-right">
-                            <div className="font-mono text-xs text-[var(--green)]">${sol.price_usdc}</div>
+                            <div className="font-mono text-xs text-[var(--green)]">{sol.price_usdc} STX</div>
                             <div className="font-mono text-[10px] text-[var(--ink-tertiary)]">price</div>
                           </div>
                         </div>
@@ -672,13 +686,24 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="rounded-lg border border-[var(--green-dim)] bg-[var(--surface-raised)] px-5 py-4">
               <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Confirmed Earnings</div>
-              <div className="font-mono text-xl text-[var(--green)]">{earningsTotals.earned}</div>
-              <div className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-0.5">USDCx</div>
+              <div className="font-mono text-xl text-[var(--green)]">{earningsTotals.earned} <span className="text-sm">STX</span></div>
+              {stxPrice && parseFloat(earningsTotals.earned) > 0 && (
+                <div className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-0.5">
+                  ≈ ${(parseFloat(earningsTotals.earned) * stxPrice).toFixed(2)} USD
+                </div>
+              )}
             </div>
             <div className="rounded-lg border border-[#3a2a00] bg-[var(--surface-raised)] px-5 py-4">
               <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Pending Payment</div>
-              <div className="font-mono text-xl" style={{ color: '#eab308' }}>{earningsTotals.pending}</div>
-              <div className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-0.5">USDCx · awaiting agent</div>
+              <div className="font-mono text-xl" style={{ color: '#eab308' }}>{earningsTotals.pending} <span className="text-sm">STX</span></div>
+              {stxPrice && parseFloat(earningsTotals.pending) > 0 && (
+                <div className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-0.5">
+                  ≈ ${(parseFloat(earningsTotals.pending) * stxPrice).toFixed(2)} USD · awaiting agent
+                </div>
+              )}
+              {(!stxPrice || parseFloat(earningsTotals.pending) === 0) && (
+                <div className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-0.5">awaiting agent payment</div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-4 mb-6">
@@ -721,14 +746,19 @@ export default function DashboardPage() {
                         <p className="text-[10px] text-[var(--ink-tertiary)] mt-0.5">{row.solution_id.slice(0, 12)}…</p>
                       </td>
                       <td className="px-5 py-4 font-mono text-xs text-[var(--ink-secondary)] whitespace-nowrap">
-                        {row.price_usdc} USDCx
+                        {row.price_usdc} STX
                       </td>
                       <td className="px-5 py-4">
                         {row.pending_unlocks > 0 ? (
                           <div>
                             <span className="font-mono text-xs" style={{ color: '#eab308' }}>
-                              {row.pending_usdc} USDCx
+                              {row.pending_usdc} STX
                             </span>
+                            {stxPrice && parseFloat(row.pending_usdc) > 0 && (
+                              <div className="font-mono text-[10px] text-[var(--ink-tertiary)]">
+                                ≈ ${(parseFloat(row.pending_usdc) * stxPrice).toFixed(2)}
+                              </div>
+                            )}
                             <div className="flex items-center gap-1 mt-0.5">
                               <span className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ backgroundColor: '#eab308' }} />
                               <span className="font-mono text-[10px] text-[var(--ink-tertiary)]">
@@ -743,7 +773,12 @@ export default function DashboardPage() {
                       <td className="px-5 py-4">
                         {parseFloat(row.earned_usdc) > 0 ? (
                           <div>
-                            <span className="font-mono text-xs text-[var(--green)]">{row.earned_usdc} USDCx</span>
+                            <span className="font-mono text-xs text-[var(--green)]">{row.earned_usdc} STX</span>
+                            {stxPrice && (
+                              <div className="font-mono text-[10px] text-[var(--ink-tertiary)]">
+                                ≈ ${(parseFloat(row.earned_usdc) * stxPrice).toFixed(2)}
+                              </div>
+                            )}
                             <div className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-0.5">
                               {row.paid_unlocks} confirmed
                             </div>

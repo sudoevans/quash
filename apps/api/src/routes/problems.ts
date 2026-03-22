@@ -337,7 +337,6 @@ router.post('/:problem_id/solve', async (req: Request, res: Response) => {
     resolver_name,
     problem_signatures = [],
     affected_stacks = [],
-    price_usdc = '0.03',
   } = req.body;
 
   if (!title || !explanation) {
@@ -410,7 +409,8 @@ router.post('/:problem_id/solve', async (req: Request, res: Response) => {
         affectedStacks: stacks,
         successRate: 0.0,
         totalUses: 0,
-        priceUsdc: String(price_usdc),
+        // Use the problem's locked bounty as the payout amount (in STX)
+        priceUsdc: problem.bountyAmount ?? '0',
       },
     });
 

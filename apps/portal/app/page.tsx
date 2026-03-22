@@ -3,9 +3,41 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
+function ClaudeIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M12 3L20 18H4L12 3Z" stroke="currentColor" strokeWidth="1.5"/>
+      <path d="M8 14h8" stroke="currentColor" strokeWidth="1.5"/>
+    </svg>
+  );
+}
+
+function GeminiIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M12 2C12 7 17 12 22 12C17 12 12 17 12 22C12 17 7 12 2 12C7 12 12 7 12 2Z" fill="currentColor"/>
+    </svg>
+  );
+}
+
+function CursorIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M4 4l7 18 3-7 7-3L4 4Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [pluginCopied, setPluginCopied] = useState(false);
+
+  const copyPluginCommand = () => {
+    navigator.clipboard.writeText('/plugin install sudoevans/quash');
+    setPluginCopied(true);
+    setTimeout(() => setPluginCopied(false), 2000);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,6 +163,65 @@ export default function LandingPage() {
             <Link href="#api" className="font-mono text-xs uppercase tracking-widest border-b border-[var(--ink-primary)] pb-1 hover:text-[var(--green)] hover:border-[var(--green)] transition-colors">
               View API Reference
             </Link>
+          </div>
+        </section>
+
+        {/* Get the Plugin */}
+        <section id="plugin" className="px-8 py-24 border-b border-[var(--rule)]">
+          <div className="max-w-screen-xl mx-auto">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-12">Get the Plugin</p>
+
+            {/* AI tool tabs */}
+            <div className="flex items-center gap-3 mb-10">
+              {/* Claude Code — active */}
+              <div className="flex items-center gap-2 px-4 py-2 border border-[var(--green)] rounded-full text-[var(--green)]">
+                <ClaudeIcon className="w-4 h-4" />
+                <span className="font-mono text-xs">Claude Code</span>
+              </div>
+
+              {/* Gemini — coming soon */}
+              <div className="relative flex items-center gap-2 px-4 py-2 border border-[var(--rule)] rounded-full opacity-50 cursor-not-allowed select-none">
+                <GeminiIcon className="w-4 h-4 text-[var(--ink-tertiary)]" />
+                <span className="font-mono text-xs text-[var(--ink-tertiary)]">Gemini</span>
+                <span className="font-mono text-[9px] text-[var(--ink-tertiary)] border border-[var(--rule)] rounded-full px-1.5 py-0.5 ml-1">soon</span>
+              </div>
+
+              {/* Cursor — coming soon */}
+              <div className="relative flex items-center gap-2 px-4 py-2 border border-[var(--rule)] rounded-full opacity-50 cursor-not-allowed select-none">
+                <CursorIcon className="w-4 h-4 text-[var(--ink-tertiary)]" />
+                <span className="font-mono text-xs text-[var(--ink-tertiary)]">Cursor</span>
+                <span className="font-mono text-[9px] text-[var(--ink-tertiary)] border border-[var(--rule)] rounded-full px-1.5 py-0.5 ml-1">soon</span>
+              </div>
+            </div>
+
+            {/* Claude Code install instructions */}
+            <div className="max-w-2xl">
+              {/* Code block */}
+              <div className="bg-[var(--surface-inset)] border border-[var(--rule)] rounded-lg p-6 font-mono text-xs leading-relaxed mb-6">
+                <div className="text-[var(--ink-tertiary)] mb-3"># 1. Run setup wizard</div>
+                <div className="text-[var(--ink-primary)] mb-6">$ npx quash-mcp init</div>
+                <div className="text-[var(--ink-tertiary)] mb-3"># 2. Add to ~/.claude/settings.json</div>
+                <div className="text-[var(--ink-secondary)]">{`{`}</div>
+                <div className="text-[var(--ink-secondary)] pl-4">{`"mcpServers": {`}</div>
+                <div className="text-[var(--ink-secondary)] pl-8">{`"quash": { "command": "npx", "args": ["-y", "quash-mcp"] }`}</div>
+                <div className="text-[var(--ink-secondary)] pl-4">{`}`}</div>
+                <div className="text-[var(--ink-secondary)]">{`}`}</div>
+              </div>
+
+              {/* Plugin install command + copy */}
+              <div className="flex items-center gap-4">
+                <span className="font-mono text-xs text-[var(--ink-tertiary)] uppercase tracking-widest">or</span>
+                <div className="flex items-center gap-3 flex-1 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3">
+                  <span className="font-mono text-xs text-[var(--ink-primary)] flex-1">/plugin install sudoevans/quash</span>
+                  <button
+                    onClick={copyPluginCommand}
+                    className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap"
+                  >
+                    {pluginCopied ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 

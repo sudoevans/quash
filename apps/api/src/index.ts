@@ -7,6 +7,7 @@ import problemsRouter from './routes/problems';
 import feedbackRouter from './routes/feedback';
 import webhooksRouter from './routes/webhooks';
 import authRouter from './routes/auth';
+import agentsRouter from './routes/agents';
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/auth', authRouter);
+app.use('/agents', agentsRouter);
 app.use('/solutions', solutionsRouter);
 app.use('/solve', solveRouter);
 app.use('/problems', problemsRouter);
