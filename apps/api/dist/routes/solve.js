@@ -13,7 +13,7 @@ const PLATFORM_WALLET = (process.env.PLATFORM_WALLET_ADDRESS ?? '').toLowerCase(
  *   2. Confirmed SIP-010 fungible token transfer to platform wallet (Phase 2)
  *   3. Confirmed simple STX transfer to platform wallet   (x402 direct transfer)
  */
-async function verifyStacksTx(txid) {
+async function verifyStacksTx(txid, expertAddress) {
     const apiKey = process.env.HIRO_API_KEY;
     const res = await fetch(`${HIRO_API_BASE}/extended/v1/tx/${txid}`, {
         headers: { 'x-hiro-api-key': apiKey ?? '' },
@@ -27,21 +27,27 @@ async function verifyStacksTx(txid) {
         return { confirmed: false };
     const contractAddress = process.env.CONTRACT_ADDRESS ?? '';
     const platformWallet = PLATFORM_WALLET;
-    // 1. Contract call to quash-escrow.lock-stx (STX escrow)
+    const expertWallet = expertAddress?.toLowerCase();
+    // Accepted recipients: expert wallet (direct pay) or platform wallet (fallback)
+    const isAcceptedRecipient = (addr) => {
+        const a = addr.toLowerCase();
+        return a === platformWallet || (expertWallet ? a === expertWallet : false);
+    };
+    // 1. Contract call to quash-escrow.lock-stx
     if (tx.tx_type === 'contract_call' &&
         tx.contract_call?.contract_id?.toLowerCase() === contractAddress.toLowerCase() &&
         tx.contract_call?.function_name === 'lock-stx') {
         return { confirmed: true };
     }
-    // 2. SIP-010 token transfer event to platform wallet (USDCx / sBTC - Phase 2)
+    // 2. SIP-010 token transfer to expert or platform wallet
     const tokenEvent = (tx.events ?? []).find((e) => e.event_type === 'fungible_token_asset' &&
         e.asset?.asset_event_type === 'transfer' &&
-        e.asset?.recipient?.toLowerCase() === platformWallet);
+        isAcceptedRecipient(e.asset?.recipient ?? ''));
     if (tokenEvent)
         return { confirmed: true };
-    // 3. Simple STX transfer to platform wallet (x402 direct payment)
+    // 3. Direct STX transfer to expert or platform wallet
     if (tx.tx_type === 'token_transfer' &&
-        tx.token_transfer?.recipient_address?.toLowerCase() === platformWallet) {
+        isAcceptedRecipient(tx.token_transfer?.recipient_address ?? '')) {
         return { confirmed: true };
     }
     return { confirmed: false };
@@ -75,7 +81,7 @@ const CAIP2 = process.env.STACKS_NETWORK === 'mainnet' ? 'stacks:1' : 'stacks:21
 /**
  * Shared helper: record payment + return full solution response.
  */
-async function returnSolution(res, solution, agent, txid, currency, payer) {
+async function returnSolution(res, solution, agent, txid, currency, payer, expertAddress) {
     const stxMicrosPerUsd = parseInt(process.env.STX_MICROS_PER_USD ?? '1000000', 10);
     let payment;
     try {
@@ -87,7 +93,7 @@ async function returnSolution(res, solution, agent, txid, currency, payer) {
                 amountMicro: Math.round(parseFloat(solution.priceUsdc) * stxMicrosPerUsd),
                 currency,
                 network: NETWORK,
-                status: 'confirmed',
+                status: 'confirmed', // paid directly to expert on-chain
             },
         });
     }
@@ -115,6 +121,7 @@ async function returnSolution(res, solution, agent, txid, currency, payer) {
             payment_id: payment?.id,
             tx_hash: txid,
             payer: payer ?? agent.agentString,
+            paid_to: expertAddress ?? process.env.PLATFORM_WALLET_ADDRESS,
             currency,
             network: NETWORK,
             confirmed_at: new Date().toISOString(),
@@ -196,12 +203,14 @@ router.post('/', auth_1.requireAgentId, async (req, res) => {
                     ],
                 },
                 orderBy: { successRate: 'desc' },
+                include: { author: { select: { stacksAddress: true } } },
             });
             if (!solution) {
                 return res.status(404).json({ error: { code: 'SOLUTION_NOT_FOUND', message: 'Payment received but no solution matched your query.' } });
             }
+            const expertAddr = solution.author?.stacksAddress ?? undefined;
             const currency = accepted?.asset === 'SBTC' ? 'sBTC' : accepted?.asset === 'USDCX' ? 'USDCx' : 'STX';
-            return returnSolution(res, solution, agent, txid, currency);
+            return returnSolution(res, solution, agent, txid, currency, undefined, expertAddr);
         }
         catch (err) {
             console.error('[POST /solve] x402 flow error:', err);
@@ -223,15 +232,19 @@ router.post('/', auth_1.requireAgentId, async (req, res) => {
             return res.status(400).json({ error: { code: 'INVALID_REQUEST', message: 'X-Payment must include txid and solution_id.' } });
         }
         try {
-            const solution = await prisma.solution.findUnique({ where: { id: solution_id } });
+            const solution = await prisma.solution.findUnique({
+                where: { id: solution_id },
+                include: { author: { select: { stacksAddress: true } } },
+            });
             if (!solution) {
                 return res.status(404).json({ error: { code: 'SOLUTION_NOT_FOUND', message: 'Solution not found.' } });
             }
+            const expertAddr = solution.author?.stacksAddress ?? undefined;
             const isTestTx = txid.startsWith('test-');
             if (!isTestTx) {
                 let verification;
                 try {
-                    verification = await verifyStacksTx(txid);
+                    verification = await verifyStacksTx(txid, expertAddr);
                 }
                 catch (err) {
                     console.error('[POST /solve] Hiro verification error:', err);
@@ -243,7 +256,7 @@ router.post('/', auth_1.requireAgentId, async (req, res) => {
                     });
                 }
             }
-            return returnSolution(res, solution, agent, txid, currency);
+            return returnSolution(res, solution, agent, txid, currency, undefined, expertAddr);
         }
         catch (err) {
             console.error('[POST /solve] Legacy flow error:', err);
@@ -263,6 +276,7 @@ router.post('/', auth_1.requireAgentId, async (req, res) => {
                 ],
             },
             orderBy: { successRate: 'desc' },
+            include: { author: { select: { stacksAddress: true, name: true } } },
         });
         if (!solution) {
             return res.status(404).json({
@@ -272,11 +286,14 @@ router.post('/', auth_1.requireAgentId, async (req, res) => {
                 suggestion: 'POST /problems with this live_question_id to offer a bounty',
             });
         }
+        // Pay expert directly if they have a wallet; fall back to platform wallet
+        const expertAddress = solution.author?.stacksAddress
+            ?? process.env.PLATFORM_WALLET_ADDRESS ?? '';
         let firstStep = 'See full solution after payment.';
         try {
             const fixData = JSON.parse(solution.structuredFixJson);
             if (Array.isArray(fixData.steps) && fixData.steps.length > 0) {
-                firstStep = fixData.steps[0].instruction ?? firstStep;
+                firstStep = fixData.steps[0].instruction ?? fixData.steps[0].command ?? firstStep;
             }
         }
         catch { /* use default */ }
@@ -284,8 +301,7 @@ router.post('/', auth_1.requireAgentId, async (req, res) => {
         const stxMicrosPerUsd = parseInt(process.env.STX_MICROS_PER_USD ?? '1000000', 10);
         const stxAmountMicro = Math.round(parseFloat(solution.priceUsdc) * stxMicrosPerUsd);
         const expiresAt = Math.floor(Date.now() / 1000) + 300;
-        // x402 V2 payment-required header — for agents using x402-stacks createPaymentClient()
-        // The client reads this header, signs an STX transfer, and retries with payment-signature.
+        // x402 V2 payment-required header — payTo is expert's address (direct payment)
         const x402PaymentRequired = {
             x402Version: 2,
             resource: { url: '/solve', method: 'POST' },
@@ -295,7 +311,7 @@ router.post('/', auth_1.requireAgentId, async (req, res) => {
                     network: CAIP2,
                     amount: stxAmountMicro.toString(),
                     asset: 'STX',
-                    payTo: process.env.PLATFORM_WALLET_ADDRESS ?? '',
+                    payTo: expertAddress,
                     maxTimeoutSeconds: 300,
                     description: `Unlock: ${solution.title}`,
                 },
