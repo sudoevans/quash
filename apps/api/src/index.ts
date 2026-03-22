@@ -21,7 +21,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', api: 'QuashAPI v1.0', ts: new Date().toISOString() });
 });
 
-app.use('/solutions/search', solutionsRouter);
+app.use('/solutions', solutionsRouter);
 app.use('/solve', solveRouter);
 app.use('/problems', problemsRouter);
 app.use('/feedback', feedbackRouter);

@@ -1,0 +1,17 @@
+id: 0
+name: Testnet deployment
+network: testnet
+stacks-node: https://api.testnet.hiro.so
+bitcoin-node: http://blockstack:blockstacksystem@bitcoind.testnet.stacks.co:18332
+plan:
+  batches:
+  - id: 0
+    transactions:
+    - transaction-type: contract-publish
+      contract-name: quash-escrow
+      expected-sender: ST2MH65RCF2W7GA8ZEVM0V3V55XT97Y9BHM5RN9TE
+      cost: 999593
+      path: contracts/quash-escrow.clar
+      anchor-block-only: true
+      clarity-version: 3
+    epoch: '3.3'

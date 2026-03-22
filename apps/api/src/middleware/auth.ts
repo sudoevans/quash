@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import crypto from 'crypto';
 
 /** Ensures X-Agent-Id header is present for agent endpoints */
 export function requireAgentId(req: Request, res: Response, next: NextFunction) {
@@ -14,21 +13,19 @@ export function requireAgentId(req: Request, res: Response, next: NextFunction) 
   next();
 }
 
-/** Verifies HMAC-SHA256 signature for Chainhook webhooks */
+/** Verifies Hiro Chainhook consumer secret via Authorization: Bearer <secret> header */
 export function verifyWebhookSignature(req: Request, res: Response, next: NextFunction) {
-  const secret = process.env.CHAINHOOK_WEBHOOK_SECRET;
-  if (!secret) return next(); // skip in dev if not configured
+  const secret = process.env.CHAINHOOK_CONSUMER_SECRET;
+  if (!secret) return next(); // skip if not configured (dev without Chainhook)
 
-  const signature = req.headers['x-agentflow-signature'] as string;
-  if (!signature) {
-    return res.status(401).json({ error: { code: 'MISSING_SIGNATURE', message: 'Webhook signature required.' } });
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) {
+    return res.status(401).json({ error: { code: 'MISSING_SIGNATURE', message: 'Authorization header required.' } });
   }
 
-  const body = JSON.stringify(req.body);
-  const expected = crypto.createHmac('sha256', secret).update(body).digest('hex');
-  const safe = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
-  if (!safe) {
-    return res.status(401).json({ error: { code: 'INVALID_SIGNATURE', message: 'Signature mismatch.' } });
+  if (authHeader !== `Bearer ${secret}`) {
+    return res.status(401).json({ error: { code: 'INVALID_SIGNATURE', message: 'Invalid consumer secret.' } });
   }
+
   next();
 }

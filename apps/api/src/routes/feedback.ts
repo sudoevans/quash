@@ -49,10 +49,11 @@ router.post('/', requireAgentId, async (req: Request, res: Response) => {
 
     if (outcome === 'resolved') {
       newRate = totalUses > 0 ? (currentRate * totalUses + 1) / (totalUses + 1) : 1.0;
+    } else if (outcome === 'partial') {
+      newRate = totalUses > 0 ? (currentRate * totalUses + 0.5) / (totalUses + 1) : 0.5;
     } else if (outcome === 'failed' || outcome === 'not_applicable') {
       newRate = totalUses > 0 ? (currentRate * totalUses) / (totalUses + 1) : 0.0;
     }
-    // 'partial' doesn't shift the rate
 
     await prisma.solution.update({
       where: { id: solution_id },
