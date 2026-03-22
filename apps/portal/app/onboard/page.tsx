@@ -30,12 +30,24 @@ export default function OnboardPage() {
     setConnecting(true);
     setError('');
     try {
-      const { request } = await import('@stacks/connect');
-      const result = await request('stx_getAddresses');
-      const stxAddr = (result as any).addresses?.find(
+      const win = window as any;
+      const provider =
+        win.StacksProvider ||
+        win.LeatherProvider ||
+        win.XverseProviders?.StacksProvider;
+
+      if (!provider) {
+        throw new Error('No Stacks wallet found. Please install Leather or Xverse.');
+      }
+
+      const result = await provider.request('stx_getAddresses');
+      // Leather returns { result: { addresses: [...] } }, Xverse returns { addresses: [...] }
+      const addresses: any[] =
+        result?.result?.addresses ?? result?.addresses ?? [];
+      const stxAddr = addresses.find(
         (a: any) => a.symbol === 'STX' || a.type === 'p2pkh' || a.type?.includes('stacks')
       );
-      const addr = stxAddr?.address ?? (result as any).addresses?.[0]?.address;
+      const addr = stxAddr?.address ?? addresses[0]?.address;
       if (!addr) throw new Error('No Stacks address returned from wallet.');
       setAddress(addr);
     } catch (e: any) {
