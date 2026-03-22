@@ -32,8 +32,10 @@ interface EarningRow {
   success_rate: number;
   total_uses: number;
   paid_unlocks: number;
+  pending_unlocks: number;
   price_usdc: string;
   earned_usdc: string;
+  pending_usdc: string;
   created_at: string;
 }
 
@@ -152,7 +154,7 @@ export default function DashboardPage() {
 
   // Earnings state
   const [earningsRows, setEarningsRows] = useState<EarningRow[]>([]);
-  const [earningsTotals, setEarningsTotals] = useState({ earned: '0.0000', uses: 0 });
+  const [earningsTotals, setEarningsTotals] = useState({ earned: '0.0000', pending: '0.0000', uses: 0 });
   const [earningsLoading, setEarningsLoading] = useState(false);
 
   const fetchEarnings = useCallback(async (address: string) => {
@@ -163,7 +165,7 @@ export default function DashboardPage() {
       if (res.ok) {
         const data = await res.json();
         setEarningsRows(data.solutions ?? []);
-        setEarningsTotals({ earned: data.total_earned_usdc ?? '0.0000', uses: data.total_uses ?? 0 });
+        setEarningsTotals({ earned: data.total_earned_usdc ?? '0.0000', pending: data.total_pending_usdc ?? '0.0000', uses: data.total_uses ?? 0 });
       }
     } catch {
       // silently fail
@@ -667,19 +669,22 @@ export default function DashboardPage() {
           </div>
 
           {/* Stat chips */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            {[
-              { label: 'Total Earned', value: `${earningsTotals.earned} USDC` },
-              { label: 'Solutions Published', value: String(earningsRows.length) },
-              { label: 'Total Uses', value: String(earningsTotals.uses) },
-            ].map(stat => (
-              <div key={stat.label} className="rounded-lg border border-[var(--rule)] bg-[var(--surface-raised)] px-5 py-4">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">{stat.label}</div>
-                <div className={`font-mono text-lg ${stat.label === 'Total Earned' ? 'text-[var(--green)]' : 'text-[var(--ink-primary)]'}`}>
-                  {stat.value}
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="rounded-lg border border-[var(--green-dim)] bg-[var(--surface-raised)] px-5 py-4">
+              <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Confirmed Earnings</div>
+              <div className="font-mono text-xl text-[var(--green)]">{earningsTotals.earned}</div>
+              <div className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-0.5">USDCx</div>
+            </div>
+            <div className="rounded-lg border border-[#3a2a00] bg-[var(--surface-raised)] px-5 py-4">
+              <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Pending Payment</div>
+              <div className="font-mono text-xl" style={{ color: '#eab308' }}>{earningsTotals.pending}</div>
+              <div className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-0.5">USDCx · awaiting agent</div>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 mb-6">
+            <span className="font-mono text-[10px] text-[var(--ink-tertiary)]">
+              {earningsRows.length} solution{earningsRows.length !== 1 ? 's' : ''} published
+            </span>
           </div>
 
           {/* Solutions table */}
@@ -701,7 +706,7 @@ export default function DashboardPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-[var(--rule)] bg-[var(--surface-inset)]">
-                    {['Title', 'Stacks', 'Uses', 'Unlocks', 'Earned'].map(col => (
+                    {['Title', 'Price', 'Pending', 'Earned'].map(col => (
                       <th key={col} className="px-5 py-3 text-left font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)]">
                         {col}
                       </th>
@@ -711,20 +716,42 @@ export default function DashboardPage() {
                 <tbody>
                   {earningsRows.map(row => (
                     <tr key={row.solution_id} className="border-b border-[var(--rule)] last:border-b-0 hover:bg-[var(--surface-raised)] transition-colors">
-                      <td className="px-5 py-4 font-mono text-xs text-[var(--ink-primary)] max-w-[240px]">
+                      <td className="px-5 py-4 font-mono text-xs text-[var(--ink-primary)] max-w-[260px]">
                         <p className="truncate">{row.title}</p>
-                        <p className="text-[10px] text-[var(--ink-tertiary)] mt-0.5">{row.solution_id.slice(0, 10)}</p>
+                        <p className="text-[10px] text-[var(--ink-tertiary)] mt-0.5">{row.solution_id.slice(0, 12)}…</p>
+                      </td>
+                      <td className="px-5 py-4 font-mono text-xs text-[var(--ink-secondary)] whitespace-nowrap">
+                        {row.price_usdc} USDCx
                       </td>
                       <td className="px-5 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {row.affected_stacks.slice(0, 2).map(s => (
-                            <span key={s} className="font-mono text-[10px] px-2 py-0.5 rounded-full border border-[var(--rule)] text-[var(--ink-tertiary)]">{s}</span>
-                          ))}
-                        </div>
+                        {row.pending_unlocks > 0 ? (
+                          <div>
+                            <span className="font-mono text-xs" style={{ color: '#eab308' }}>
+                              {row.pending_usdc} USDCx
+                            </span>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <span className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ backgroundColor: '#eab308' }} />
+                              <span className="font-mono text-[10px] text-[var(--ink-tertiary)]">
+                                {row.pending_unlocks} awaiting payment
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="font-mono text-[10px] text-[var(--ink-tertiary)]">—</span>
+                        )}
                       </td>
-                      <td className="px-5 py-4 font-mono text-xs text-[var(--ink-secondary)]">{row.total_uses}</td>
-                      <td className="px-5 py-4 font-mono text-xs text-[var(--ink-secondary)]">{row.paid_unlocks}</td>
-                      <td className="px-5 py-4 font-mono text-xs text-[var(--green)]">{row.earned_usdc} USDC</td>
+                      <td className="px-5 py-4">
+                        {parseFloat(row.earned_usdc) > 0 ? (
+                          <div>
+                            <span className="font-mono text-xs text-[var(--green)]">{row.earned_usdc} USDCx</span>
+                            <div className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-0.5">
+                              {row.paid_unlocks} confirmed
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="font-mono text-[10px] text-[var(--ink-tertiary)]">—</span>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

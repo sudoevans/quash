@@ -83,7 +83,7 @@ router.get('/earnings', async (req: Request, res: Response) => {
       where: { authorId: user.id },
       orderBy: { createdAt: 'desc' },
       include: {
-        problems: { select: { id: true } },
+        problems: { select: { id: true, status: true } },
       },
     });
 
@@ -96,7 +96,12 @@ router.get('/earnings', async (req: Request, res: Response) => {
 
     const rows = solutions.map((s, i) => {
       const paid = paymentCounts[i];
-      const earned = (parseFloat(s.priceUsdc) * paid).toFixed(4);
+      // Pending = problems linked to this solution that are solution_ready but not yet paid
+      const pending = s.problems.filter(p => p.status === 'solution_ready').length - paid;
+      const pendingCount = Math.max(0, pending);
+      const price = parseFloat(s.priceUsdc);
+      const earned = (price * paid).toFixed(4);
+      const pendingUsdc = (price * pendingCount).toFixed(4);
       return {
         solution_id: s.id,
         title: s.title,
@@ -105,16 +110,19 @@ router.get('/earnings', async (req: Request, res: Response) => {
         success_rate: s.successRate,
         total_uses: s.totalUses,
         paid_unlocks: paid,
+        pending_unlocks: pendingCount,
         price_usdc: s.priceUsdc,
         earned_usdc: earned,
+        pending_usdc: pendingUsdc,
         created_at: s.createdAt,
       };
     });
 
     const totalEarned = rows.reduce((sum, r) => sum + parseFloat(r.earned_usdc), 0).toFixed(4);
+    const totalPending = rows.reduce((sum, r) => sum + parseFloat(r.pending_usdc), 0).toFixed(4);
     const totalUses = rows.reduce((sum, r) => sum + r.total_uses, 0);
 
-    return res.json({ solutions: rows, total_earned_usdc: totalEarned, total_uses: totalUses });
+    return res.json({ solutions: rows, total_earned_usdc: totalEarned, total_pending_usdc: totalPending, total_uses: totalUses });
   } catch (err) {
     console.error('[GET /solutions/earnings] Error:', err);
     return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error.' } });
