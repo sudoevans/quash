@@ -3,7 +3,6 @@ import { PrismaClient } from '@prisma/client';
 import { AgentQuerySchema } from '../schemas/agentQuery';
 import { requireAgentId } from '../middleware/auth';
 import { deserializeTransaction, broadcastTransaction } from '@stacks/transactions';
-import { StacksTestnet, StacksMainnet } from '@stacks/network';
 
 const HIRO_API_BASE = 'https://api.testnet.hiro.so';
 const PLATFORM_WALLET = (process.env.PLATFORM_WALLET_ADDRESS ?? '').toLowerCase();
