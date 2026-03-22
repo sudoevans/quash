@@ -77,6 +77,58 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 /**
+ * GET /problems/:problem_id
+ * Public — resolvers fetch full problem details before writing a solution.
+ */
+router.get('/:problem_id', async (req: Request, res: Response) => {
+  const { problem_id } = req.params;
+  try {
+    const problem = await prisma.problem.findUnique({
+      where: { id: problem_id },
+      select: {
+        id: true,
+        status: true,
+        urgency: true,
+        errorType: true,
+        errorMessage: true,
+        fullQueryJson: true,
+        bountyAmount: true,
+        createdAt: true,
+        expiresAt: true,
+        solveDeadline: true,
+        agent: { select: { agentString: true } },
+      },
+    });
+    if (!problem) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Problem not found.' } });
+    }
+
+    let environment: any = null;
+    try {
+      const q = JSON.parse(problem.fullQueryJson);
+      environment = q?.environment ?? null;
+    } catch { /* ignore */ }
+
+    return res.json({
+      id: problem.id,
+      status: problem.status,
+      urgency: problem.urgency,
+      errorType: problem.errorType,
+      errorMessage: problem.errorMessage,
+      bountyAmount: problem.bountyAmount,
+      agentId: problem.agent?.agentString,
+      environment,
+      createdAt: problem.createdAt.toISOString(),
+      expiresAt: problem.expiresAt.toISOString(),
+      solveDeadline: problem.solveDeadline?.toISOString() ?? null,
+    });
+  } catch (err) {
+    console.error('[GET /problems/:id] Error:', err);
+    return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error.' } });
+  }
+});
+
+/**
  * POST /problems/:id/claim
  * Resolver claims a problem to work on.
  */

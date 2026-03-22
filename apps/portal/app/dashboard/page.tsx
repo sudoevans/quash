@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation';
 import { URGENCY_CONFIG, type Problem, type Urgency } from '@/lib/types';
 import { getStoredAddress, shortAddress } from '@/lib/auth';
 
+function Spinner() {
+  return (
+    <span className="inline-block w-3.5 h-3.5 rounded-full border-[1.5px] border-current border-t-transparent animate-spin" />
+  );
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 // CSS-safe urgency dot colors (decorative only — not in design token set)
@@ -484,9 +490,9 @@ export default function DashboardPage() {
                     <button
                       onClick={() => handleClaim(selected)}
                       disabled={claiming}
-                      className="w-full py-3 rounded-full bg-[var(--green)] text-[var(--surface-base)] font-mono text-xs uppercase tracking-widest hover:opacity-90 disabled:opacity-50 transition-opacity"
+                      className="w-full py-3 rounded-full bg-[var(--green)] text-[var(--surface-base)] font-mono text-xs uppercase tracking-widest hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
                     >
-                      {claiming ? 'Claiming…' : 'Claim & Solve →'}
+                      {claiming ? <><Spinner /><span>Claiming…</span></> : 'Claim & Solve →'}
                     </button>
                     <button
                       onClick={() => setSelected(null)}
@@ -654,9 +660,9 @@ export default function DashboardPage() {
             <button
               onClick={() => fetchEarnings(walletAddress)}
               disabled={!walletAddress || earningsLoading}
-              className="px-4 py-2 rounded-full border border-[var(--rule)] font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)] hover:border-[var(--ink-tertiary)] disabled:opacity-40 transition-colors"
+              className="px-4 py-2 rounded-full border border-[var(--rule)] font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)] hover:border-[var(--ink-tertiary)] disabled:opacity-40 transition-colors flex items-center gap-1.5"
             >
-              {earningsLoading ? '…' : 'Refresh'}
+              {earningsLoading ? <><Spinner /><span>Loading…</span></> : 'Refresh'}
             </button>
           </div>
 

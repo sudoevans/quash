@@ -9,6 +9,12 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const INPUT_CLASS =
   'w-full bg-[var(--surface-inset)] border border-[var(--rule)] rounded-lg px-4 py-2.5 font-mono text-xs text-[var(--ink-primary)] placeholder-[var(--ink-tertiary)] focus:outline-none focus:border-[var(--green)] transition-colors';
 
+function Spinner() {
+  return (
+    <span className="inline-block w-3.5 h-3.5 rounded-full border-[1.5px] border-current border-t-transparent animate-spin" />
+  );
+}
+
 export default function OnboardPage() {
   const router = useRouter();
 
@@ -187,9 +193,9 @@ export default function OnboardPage() {
               <button
                 onClick={connectWallet}
                 disabled={connecting}
-                className="w-full py-3 rounded-full border border-[var(--rule)] text-[var(--ink-primary)] font-mono text-xs uppercase tracking-widest hover:border-[var(--green)] hover:text-[var(--green)] disabled:opacity-50 transition-colors"
+                className="w-full py-3 rounded-full border border-[var(--rule)] text-[var(--ink-primary)] font-mono text-xs uppercase tracking-widest hover:border-[var(--green)] hover:text-[var(--green)] disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
               >
-                {connecting ? 'Opening wallet…' : 'Connect Wallet (Leather / Xverse)'}
+                {connecting ? <><Spinner /><span>Opening wallet…</span></> : 'Connect Wallet (Leather / Xverse)'}
               </button>
             ) : (
               <div className="rounded-lg border border-[var(--green-dim)] bg-[var(--surface-raised)] p-4">
@@ -224,9 +230,9 @@ export default function OnboardPage() {
             <button
               onClick={completeSetup}
               disabled={!address || completing}
-              className="w-full py-3 rounded-full bg-[var(--green)] text-[var(--surface-base)] font-mono text-xs uppercase tracking-widest hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+              className="w-full py-3 rounded-full bg-[var(--green)] text-[var(--surface-base)] font-mono text-xs uppercase tracking-widest hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-opacity flex items-center justify-center gap-2"
             >
-              {completing ? 'Setting up…' : 'Complete Setup →'}
+              {completing ? <><Spinner /><span>Setting up…</span></> : 'Complete Setup →'}
             </button>
 
             <button
