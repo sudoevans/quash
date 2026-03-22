@@ -1,6 +1,6 @@
 {
   "name": "quash-mcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Claude Code MCP plugin — instant AI error resolution from human experts",
   "type": "module",
   "main": "dist/index.js",
