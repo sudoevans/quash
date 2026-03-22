@@ -166,7 +166,8 @@ router.post('/', requireAgentId, async (req: Request, res: Response) => {
 
   const query = parseResult.data;
   const agentIdString = (req as any).agentId as string;
-  const urgency = query.agent.urgency ?? 'standard';
+  const agentField = query.agent as any;
+  const urgency = agentField.urgency ?? 'standard';
   const windowMinutes = URGENCY_WINDOWS[urgency] ?? 45;
   const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2-hour escrow window
 
@@ -184,7 +185,7 @@ router.post('/', requireAgentId, async (req: Request, res: Response) => {
 
     const bountyData = (req.body as any).bounty;
     const escrowTx = bountyData?.preauth ?? null;
-    const bountyAmount = query.agent.bounty != null ? String(query.agent.bounty) : bountyData?.amount != null ? String(bountyData.amount) : null;
+    const bountyAmount = agentField.bounty != null ? String(agentField.bounty) : bountyData?.amount != null ? String(bountyData.amount) : null;
     const callbackUrl = (req.body as any).callback_url ?? null;
 
     const problem = await prisma.problem.create({

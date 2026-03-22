@@ -20,26 +20,26 @@ export const AgentQuerySchema = z.object({
   schema_version: z.string().default('1.0'),
   error: z.object({
     message: z.string(),
-    type: ErrorTypeEnum,
-    exit_code: z.number().int().nullable().optional(),
+    type: z.union([ErrorTypeEnum, z.string()]).default('process_exit'),
+    exit_code: z.union([z.number(), z.string()]).nullable().optional(),
     stderr: z.string().optional().default(''),
     stdout: z.string().optional().default(''),
     signal: z.string().nullable().optional(),
-  }),
+  }).passthrough(),
   environment: z.object({
     os: z.object({
-      family: z.enum(['linux', 'darwin', 'windows']),
+      family: z.string().default('linux'),
       distro: z.string().optional(),
       version: z.string().optional(),
-      arch: z.enum(['amd64', 'arm64', 'arm']).optional(),
-      libc: z.enum(['musl', 'glibc']).nullable().optional(),
-    }),
-    runtime: z.object({ name: z.string(), version: z.string() }).optional(),
-    shell: z.object({ name: z.string(), variant: z.string().optional(), version: z.string().optional() }).optional(),
-    container: z.object({ image: z.string(), runtime: z.string() }).optional(),
-    ci: z.object({ provider: z.string(), runner: z.string() }).optional(),
+      arch: z.string().optional(),
+      libc: z.string().nullable().optional(),
+    }).passthrough().optional(),
+    runtime: z.object({ name: z.string(), version: z.string() }).passthrough().optional(),
+    shell: z.object({ name: z.string() }).passthrough().optional(),
+    container: z.object({ image: z.string(), runtime: z.string() }).passthrough().optional(),
+    ci: z.object({ provider: z.string(), runner: z.string() }).passthrough().optional(),
     tool_versions: z.record(z.string()).optional(),
-  }).optional(),
+  }).passthrough().optional(),
   source: z.object({
     repo: z.string().optional(),
     file: z.string().optional(),
@@ -63,12 +63,16 @@ export const AgentQuerySchema = z.object({
     reproduce_with: z.union([z.array(z.string()), z.string()]).optional(),
     expected_error_output: z.string().optional(),
   }).optional(),
-  agent: z.object({
-    id: z.string(),
-    retry_count: z.number().int().optional(),
-    urgency: UrgencyEnum.optional().default('standard'),
-    bounty: z.string().nullable().optional(),
-  }),
+  agent: z.union([
+    z.object({
+      id: z.string(),
+      retry_count: z.union([z.number(), z.string()]).optional(),
+      urgency: UrgencyEnum.optional().default('standard'),
+      bounty: z.union([z.string(), z.number()]).nullable().optional(),
+    }).passthrough(),
+    z.string().transform(s => ({ id: s })),
+    z.number().transform(n => ({ id: String(n) })),
+  ]),
 });
 
 export type AgentQuery = z.infer<typeof AgentQuerySchema>;
