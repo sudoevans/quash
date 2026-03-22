@@ -1,17 +1,28 @@
 {
-  "name": "mcp-plugin",
+  "name": "quash-mcp",
   "version": "1.0.0",
-  "private": true,
+  "description": "Claude Code MCP plugin — instant AI error resolution from human experts",
+  "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "quash-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "CLAUDE.md",
+    "README.md"
+  ],
   "scripts": {
     "dev": "tsc --watch",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.6.0",
     "@stacks/transactions": "^6.13.0",
-    "@stacks/network": "^6.13.0"
+    "@stacks/network": "^6.13.0",
+    "@stacks/wallet-sdk": "^6.3.0"
   },
   "devDependencies": {
     "typescript": "^5.4.5",

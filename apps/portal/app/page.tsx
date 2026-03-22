@@ -2,10 +2,18 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
+
+  const copyCmd = (key: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCmd(key);
+    setTimeout(() => setCopiedCmd(null), 2000);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,6 +27,7 @@ export default function LandingPage() {
         <div className="text-2xl font-serif tracking-tighter text-[var(--ink-primary)]">Quash</div>
         <nav className="hidden md:flex items-center gap-12">
           <Link href="#solutions" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Solutions</Link>
+          <Link href="#docs" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Docs</Link>
           <Link href="#pricing" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Pricing</Link>
           <Link href="/api-reference" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">API</Link>
           <Link href="/onboard" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Login</Link>
@@ -134,6 +143,123 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Docs Section */}
+        <section id="docs" className="px-8 py-24 border-b border-[var(--rule)]">
+          <div className="max-w-screen-xl mx-auto">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-12">Documentation</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-px border border-[var(--rule)] bg-[var(--rule)]">
+              <div className="bg-[var(--surface-base)] p-10">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-4">For Agents</div>
+                <h3 className="text-xl font-serif mb-4">MCP Plugin</h3>
+                <p className="text-sm text-[var(--ink-secondary)] leading-relaxed mb-8">
+                  Install the Quash plugin into Claude Code. Automatic error resolution — search, pay, apply, and report feedback without interrupting your workflow.
+                </p>
+                <Link href="#plugin" className="font-mono text-xs uppercase tracking-widest border-b border-[var(--ink-primary)] pb-1 hover:text-[var(--green)] hover:border-[var(--green)] transition-colors">
+                  Get the Plugin →
+                </Link>
+              </div>
+              <div className="bg-[var(--surface-base)] p-10">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-4">For Experts</div>
+                <h3 className="text-xl font-serif mb-4">Solving Bounties</h3>
+                <p className="text-sm text-[var(--ink-secondary)] leading-relaxed mb-8">
+                  Browse live error bounties, submit solutions, and earn STX instantly on resolution. Your solutions earn passively every time an agent references them.
+                </p>
+                <Link href="/onboard" className="font-mono text-xs uppercase tracking-widest border-b border-[var(--ink-primary)] pb-1 hover:text-[var(--green)] hover:border-[var(--green)] transition-colors">
+                  Join as Expert →
+                </Link>
+              </div>
+              <div className="bg-[var(--surface-base)] p-10">
+                <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-4">For Developers</div>
+                <h3 className="text-xl font-serif mb-4">REST API</h3>
+                <p className="text-sm text-[var(--ink-secondary)] leading-relaxed mb-8">
+                  Integrate Quash directly into your own agent pipelines. Full reference for solutions, problems, bounties, payments, and webhooks.
+                </p>
+                <Link href="/api-reference" className="font-mono text-xs uppercase tracking-widest border-b border-[var(--ink-primary)] pb-1 hover:text-[var(--green)] hover:border-[var(--green)] transition-colors">
+                  View API Reference →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Get the Plugin */}
+        <section id="plugin" className="px-8 py-24 border-b border-[var(--rule)]">
+          <div className="max-w-screen-xl mx-auto">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-12">Get the Plugin</p>
+
+            {/* AI tool tabs */}
+            <div className="flex items-center gap-3 mb-10">
+              {/* Claude Code — active */}
+              <div className="flex items-center gap-2 px-4 py-2 border border-[var(--green)] rounded-full">
+                <Image src="/claude-ai-icon.png" alt="Claude" width={16} height={16} className="w-4 h-4 rounded-sm" />
+                <span className="font-mono text-xs text-[var(--green)]">Claude Code</span>
+              </div>
+
+              {/* Gemini — coming soon */}
+              <div className="flex items-center gap-2 px-4 py-2 border border-[var(--rule)] rounded-full opacity-50 cursor-not-allowed select-none">
+                <Image src="/google-gemini-icon.png" alt="Gemini" width={16} height={16} className="w-4 h-4" />
+                <span className="font-mono text-xs text-[var(--ink-tertiary)]">Gemini</span>
+                <span className="font-mono text-[9px] text-[var(--ink-tertiary)] border border-[var(--rule)] rounded-full px-1.5 py-0.5 ml-1">soon</span>
+              </div>
+
+              {/* Cursor — coming soon */}
+              <div className="flex items-center gap-2 px-4 py-2 border border-[var(--rule)] rounded-full opacity-50 cursor-not-allowed select-none">
+                <Image src="/Cursor Logo.png" alt="Cursor" width={16} height={16} className="w-4 h-4" />
+                <span className="font-mono text-xs text-[var(--ink-tertiary)]">Cursor</span>
+                <span className="font-mono text-[9px] text-[var(--ink-tertiary)] border border-[var(--rule)] rounded-full px-1.5 py-0.5 ml-1">soon</span>
+              </div>
+            </div>
+
+            {/* Claude Code install instructions */}
+            <div className="max-w-2xl flex flex-col gap-3">
+              {/* Step 1 */}
+              <div className="flex items-start gap-4">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-3.5 w-12 shrink-0">01</span>
+                <div className="flex-1">
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Set up your wallet</p>
+                  <div className="flex items-center gap-3 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3">
+                    <span className="font-mono text-xs text-[var(--ink-primary)] flex-1 select-all">npx quash-mcp init</span>
+                    <button
+                      onClick={() => copyCmd('init', 'npx quash-mcp init')}
+                      className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap"
+                    >
+                      {copiedCmd === 'init' ? '✓ Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <p className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-2">Creates your Stacks wallet and saves config to ~/.quash/config.json</p>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex items-start gap-4">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-3.5 w-12 shrink-0">02</span>
+                <div className="flex-1">
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Add to Claude Code</p>
+                  <div className="flex items-center gap-3 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3">
+                    <span className="font-mono text-xs text-[var(--ink-primary)] flex-1 select-all">claude mcp add quash -- npx -y quash-mcp</span>
+                    <button
+                      onClick={() => copyCmd('mcp', 'claude mcp add quash -- npx -y quash-mcp')}
+                      className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap"
+                    >
+                      {copiedCmd === 'mcp' ? '✓ Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <p className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-2">Registers the MCP server — no settings.json editing required</p>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex items-start gap-4">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-1 w-12 shrink-0">03</span>
+                <div className="flex-1 pt-1">
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-1">Restart Claude Code</p>
+                  <p className="font-mono text-[10px] text-[var(--ink-tertiary)]">Quash is now active. It resolves errors automatically — you will be informed before any payment is made.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Final CTA / Waitlist Form */}
         <section className="px-8 py-48 text-center bg-[var(--surface-inset)]">
           <div className="max-w-3xl mx-auto">
@@ -172,7 +298,7 @@ export default function LandingPage() {
         <div className="flex flex-col gap-4">
           <div className="text-xl font-serif text-[var(--ink-primary)]">Quash</div>
           <div className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)]">
-            &copy; 2024 Quash. All rights reserved.
+            &copy; 2026 Quash. All rights reserved.
           </div>
         </div>
         <div className="flex flex-wrap gap-x-12 gap-y-4">

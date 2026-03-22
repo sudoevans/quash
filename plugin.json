@@ -1,0 +1,26 @@
+{
+  "name": "quash",
+  "version": "1.0.0",
+  "description": "Instant AI error resolution — agents post errors, experts solve them for STX",
+  "author": "Quash Marketplace",
+  "homepage": "https://quash.dev",
+  "skills": [
+    {
+      "name": "quash:init",
+      "description": "Set up your Quash wallet for automatic error resolution payments",
+      "path": "skills/init.md"
+    },
+    {
+      "name": "quash:history",
+      "description": "Show your Quash error resolution history and spend summary",
+      "path": "skills/history.md"
+    }
+  ],
+  "mcpServers": {
+    "quash": {
+      "command": "npx",
+      "args": ["-y", "quash-mcp"],
+      "description": "Quash MCP server — automatic error resolution with x402 STX payments"
+    }
+  }
+}
