@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { saveSession } from '@/lib/auth';
+import { request } from '@stacks/connect';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -36,20 +37,8 @@ export default function OnboardPage() {
     setConnecting(true);
     setError('');
     try {
-      const win = window as any;
-      const provider =
-        win.StacksProvider ||
-        win.LeatherProvider ||
-        win.XverseProviders?.StacksProvider;
-
-      if (!provider) {
-        throw new Error('No Stacks wallet found. Please install Leather or Xverse.');
-      }
-
-      const result = await provider.request('stx_getAddresses');
-      // Leather returns { result: { addresses: [...] } }, Xverse returns { addresses: [...] }
-      const addresses: any[] =
-        result?.result?.addresses ?? result?.addresses ?? [];
+      const result = await request('stx_getAddresses');
+      const addresses: any[] = (result as any)?.addresses ?? [];
       const stxAddr = addresses.find(
         (a: any) => a.symbol === 'STX' || a.type === 'p2pkh' || a.type?.includes('stacks')
       );
