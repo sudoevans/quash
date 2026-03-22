@@ -29,6 +29,9 @@ RUN npm install --omit=dev --ignore-scripts
 COPY prisma ./prisma
 RUN npx prisma generate --schema=prisma/schema.prisma
 
+# Force Prisma to use the OpenSSL-3 engine binary (Alpine 3.17+ dropped libssl.so.1.1)
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/node_modules/.prisma/client/libquery_engine-linux-musl-openssl-3.0.x.so.node
+
 COPY --from=builder /app/dist ./dist
 
 EXPOSE 4000
