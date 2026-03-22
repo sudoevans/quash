@@ -7,12 +7,12 @@ import Image from 'next/image';
 export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [pluginCopied, setPluginCopied] = useState(false);
+  const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
 
-  const copyPluginCommand = () => {
-    navigator.clipboard.writeText('/plugin install sudoevans/quash');
-    setPluginCopied(true);
-    setTimeout(() => setPluginCopied(false), 2000);
+  const copyCmd = (key: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCmd(key);
+    setTimeout(() => setCopiedCmd(null), 2000);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -211,30 +211,49 @@ export default function LandingPage() {
             </div>
 
             {/* Claude Code install instructions */}
-            <div className="max-w-2xl">
-              {/* Code block */}
-              <div className="bg-[var(--surface-inset)] border border-[var(--rule)] rounded-lg p-6 font-mono text-xs leading-relaxed mb-6">
-                <div className="text-[var(--ink-tertiary)] mb-3"># 1. Run setup wizard</div>
-                <div className="text-[var(--ink-primary)] mb-6">$ npx quash-mcp init</div>
-                <div className="text-[var(--ink-tertiary)] mb-3"># 2. Add to ~/.claude/settings.json</div>
-                <div className="text-[var(--ink-secondary)]">{`{`}</div>
-                <div className="text-[var(--ink-secondary)] pl-4">{`"mcpServers": {`}</div>
-                <div className="text-[var(--ink-secondary)] pl-8">{`"quash": { "command": "npx", "args": ["-y", "quash-mcp"] }`}</div>
-                <div className="text-[var(--ink-secondary)] pl-4">{`}`}</div>
-                <div className="text-[var(--ink-secondary)]">{`}`}</div>
+            <div className="max-w-2xl flex flex-col gap-3">
+              {/* Step 1 */}
+              <div className="flex items-start gap-4">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-3.5 w-12 shrink-0">01</span>
+                <div className="flex-1">
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Set up your wallet</p>
+                  <div className="flex items-center gap-3 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3">
+                    <span className="font-mono text-xs text-[var(--ink-primary)] flex-1 select-all">npx quash-mcp init</span>
+                    <button
+                      onClick={() => copyCmd('init', 'npx quash-mcp init')}
+                      className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap"
+                    >
+                      {copiedCmd === 'init' ? '✓ Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <p className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-2">Creates your Stacks wallet and saves config to ~/.quash/config.json</p>
+                </div>
               </div>
 
-              {/* Plugin install command + copy */}
-              <div className="flex items-center gap-4">
-                <span className="font-mono text-xs text-[var(--ink-tertiary)] uppercase tracking-widest">or</span>
-                <div className="flex items-center gap-3 flex-1 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3">
-                  <span className="font-mono text-xs text-[var(--ink-primary)] flex-1">/plugin install sudoevans/quash</span>
-                  <button
-                    onClick={copyPluginCommand}
-                    className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap"
-                  >
-                    {pluginCopied ? 'Copied!' : 'Copy'}
-                  </button>
+              {/* Step 2 */}
+              <div className="flex items-start gap-4">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-3.5 w-12 shrink-0">02</span>
+                <div className="flex-1">
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Add to Claude Code</p>
+                  <div className="flex items-center gap-3 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3">
+                    <span className="font-mono text-xs text-[var(--ink-primary)] flex-1 select-all">claude mcp add quash -- npx -y quash-mcp</span>
+                    <button
+                      onClick={() => copyCmd('mcp', 'claude mcp add quash -- npx -y quash-mcp')}
+                      className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap"
+                    >
+                      {copiedCmd === 'mcp' ? '✓ Copied' : 'Copy'}
+                    </button>
+                  </div>
+                  <p className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-2">Registers the MCP server — no settings.json editing required</p>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex items-start gap-4">
+                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-1 w-12 shrink-0">03</span>
+                <div className="flex-1 pt-1">
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-1">Restart Claude Code</p>
+                  <p className="font-mono text-[10px] text-[var(--ink-tertiary)]">Quash is now active. It resolves errors automatically — you will be informed before any payment is made.</p>
                 </div>
               </div>
             </div>
