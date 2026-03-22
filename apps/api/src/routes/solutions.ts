@@ -264,4 +264,55 @@ router.get('/:id', requireAgentId, async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /solutions
+ * Expert submits a new solution.
+ * Requires stacksAddress (wallet auth) + full solution payload.
+ */
+router.post('/', async (req: Request, res: Response) => {
+  const {
+    stacksAddress,
+    title,
+    problemSignatures,
+    affectedStacks,
+    priceUsdc,
+    structuredFix,
+  } = req.body;
+
+  if (!stacksAddress || !title || !structuredFix) {
+    return res.status(400).json({
+      error: { code: 'INVALID_REQUEST', message: 'stacksAddress, title, and structuredFix are required.' },
+    });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { stacksAddress } });
+    if (!user) {
+      return res.status(404).json({ error: { code: 'USER_NOT_FOUND', message: 'No user found for this wallet address. Complete onboarding first.' } });
+    }
+
+    const solution = await prisma.solution.create({
+      data: {
+        title,
+        authorId: user.id,
+        problemSignatures: problemSignatures ?? [],
+        affectedStacks: affectedStacks ?? [],
+        priceUsdc: priceUsdc ?? '1.00',
+        structuredFixJson: JSON.stringify(structuredFix),
+      },
+    });
+
+    return res.status(201).json({
+      solution_id: solution.id,
+      title: solution.title,
+      author: user.name,
+      price_usdc: solution.priceUsdc,
+      created_at: solution.createdAt,
+    });
+  } catch (err) {
+    console.error('[POST /solutions] Error:', err);
+    return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error.' } });
+  }
+});
+
 export default router;
