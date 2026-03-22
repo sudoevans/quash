@@ -143,9 +143,19 @@ router.get('/search', async (req: Request, res: Response) => {
     });
   }
 
-  const keywords = (q as string).split(' ').filter(Boolean);
+  const STOP_WORDS = new Set(['a','an','the','in','on','at','to','of','is','it','no','not','be','as','or','and','for','from','with','that','this','was','are','has','have','but','by','can','do','we','my','our','if','so']);
+  const keywords = (q as string)
+    .split(/[\s,]+/)
+    .map(k => k.trim())
+    .filter(k => k.length >= 4 && !STOP_WORDS.has(k.toLowerCase()));
   const stackDomains = stack ? (stack as string).split(',').map(s => s.trim()) : [];
   const maxLimit = Math.min(parseInt(limit as string, 10) || 5, 20);
+
+  if (keywords.length === 0) {
+    return res.status(400).json({
+      error: { code: 'INVALID_REQUEST', message: 'Query must contain at least one meaningful keyword (min 4 chars).' },
+    });
+  }
 
   const start = Date.now();
 
@@ -153,13 +163,13 @@ router.get('/search', async (req: Request, res: Response) => {
     const solutions = await prisma.solution.findMany({
       where: {
         AND: [
-          // Match any keyword in title or problem signatures
-          {
+          // Every keyword must match title OR signatures (AND across keywords, OR within each)
+          ...keywords.map(kw => ({
             OR: [
-              ...keywords.map(kw => ({ title: { contains: kw, mode: 'insensitive' as const } })),
-              ...keywords.map(kw => ({ problemSignatures: { has: kw } })),
+              { title: { contains: kw, mode: 'insensitive' as const } },
+              { problemSignatures: { has: kw } },
             ],
-          },
+          })),
           // Optional stack domain filter
           ...(stackDomains.length > 0
             ? [{ affectedStacks: { hasSome: stackDomains } }]
