@@ -6,6 +6,130 @@ const router = Router();
 const prisma = new PrismaClient();
 
 /**
+ * GET /solutions
+ * Registry — returns all solutions, no payment required, no q required.
+ * Optional filters: q (search), stack (comma-separated), limit (max 50).
+ * Used by the resolver dashboard "Solutions" registry tab.
+ */
+router.get('/', async (req: Request, res: Response) => {
+  const { q, stack, limit = '20' } = req.query;
+  const maxLimit = Math.min(parseInt(limit as string, 10) || 20, 50);
+  const stackDomains = stack ? (stack as string).split(',').map(s => s.trim()) : [];
+
+  const where: any = {};
+  if (q) {
+    const keywords = (q as string).split(' ').filter(Boolean);
+    where.AND = [
+      {
+        OR: [
+          ...keywords.map(kw => ({ title: { contains: kw, mode: 'insensitive' as const } })),
+          ...keywords.map(kw => ({ problemSignatures: { has: kw } })),
+        ],
+      },
+      ...(stackDomains.length > 0 ? [{ affectedStacks: { hasSome: stackDomains } }] : []),
+    ];
+  } else if (stackDomains.length > 0) {
+    where.affectedStacks = { hasSome: stackDomains };
+  }
+
+  try {
+    const solutions = await prisma.solution.findMany({
+      where,
+      take: maxLimit,
+      orderBy: { createdAt: 'desc' },
+      include: { author: { select: { name: true, email: true } } },
+    });
+
+    return res.json({
+      results: solutions.map(s => ({
+        solution_id: s.id,
+        title: s.title,
+        author: s.author?.name ?? s.author?.email ?? 'Anonymous',
+        problem_signatures: s.problemSignatures,
+        affected_stacks: s.affectedStacks,
+        success_rate: s.successRate,
+        total_uses: s.totalUses,
+        price_usdc: s.priceUsdc,
+        created_at: s.createdAt,
+      })),
+      total: solutions.length,
+    });
+  } catch (err) {
+    console.error('[GET /solutions] Error:', err);
+    return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error.' } });
+  }
+});
+
+/**
+ * GET /solutions/earnings?stacksAddress=ST...  (or ?email=...)
+ * Returns all solutions authored by a given resolver + payment counts.
+ * Accepts stacksAddress (wallet auth) or email (legacy fallback).
+ */
+router.get('/earnings', async (req: Request, res: Response) => {
+  const { stacksAddress, email } = req.query;
+  if (!stacksAddress && !email) {
+    return res.status(400).json({ error: { code: 'INVALID_REQUEST', message: 'stacksAddress or email query parameter is required.' } });
+  }
+
+  try {
+    const user = stacksAddress
+      ? await prisma.user.findUnique({ where: { stacksAddress: stacksAddress as string } })
+      : await prisma.user.findUnique({ where: { email: email as string } });
+    if (!user) {
+      return res.json({ solutions: [], total_earned_usdc: '0.00', total_uses: 0 });
+    }
+
+    const solutions = await prisma.solution.findMany({
+      where: { authorId: user.id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        problems: { select: { id: true, status: true } },
+      },
+    });
+
+    // Count confirmed payments per solution
+    const paymentCounts = await Promise.all(
+      solutions.map(s =>
+        prisma.payment.count({ where: { solutionId: s.id, status: 'confirmed' } })
+      )
+    );
+
+    const rows = solutions.map((s, i) => {
+      const paid = paymentCounts[i];
+      // Pending = problems linked to this solution that are solution_ready but not yet paid
+      const pending = s.problems.filter(p => p.status === 'solution_ready').length - paid;
+      const pendingCount = Math.max(0, pending);
+      const price = parseFloat(s.priceUsdc);
+      const earned = (price * paid).toFixed(4);
+      const pendingUsdc = (price * pendingCount).toFixed(4);
+      return {
+        solution_id: s.id,
+        title: s.title,
+        problem_signatures: s.problemSignatures,
+        affected_stacks: s.affectedStacks,
+        success_rate: s.successRate,
+        total_uses: s.totalUses,
+        paid_unlocks: paid,
+        pending_unlocks: pendingCount,
+        price_usdc: s.priceUsdc,
+        earned_usdc: earned,
+        pending_usdc: pendingUsdc,
+        created_at: s.createdAt,
+      };
+    });
+
+    const totalEarned = rows.reduce((sum, r) => sum + parseFloat(r.earned_usdc), 0).toFixed(4);
+    const totalPending = rows.reduce((sum, r) => sum + parseFloat(r.pending_usdc), 0).toFixed(4);
+    const totalUses = rows.reduce((sum, r) => sum + r.total_uses, 0);
+
+    return res.json({ solutions: rows, total_earned_usdc: totalEarned, total_pending_usdc: totalPending, total_uses: totalUses });
+  } catch (err) {
+    console.error('[GET /solutions/earnings] Error:', err);
+    return res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'Internal server error.' } });
+  }
+});
+
+/**
  * GET /solutions/search
  * Free — no payment required. Always the first call an agent makes.
  * Query params: q, stack, error_type, limit
