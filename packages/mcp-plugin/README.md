@@ -55,7 +55,7 @@ All optional — the init wizard stores these in `~/.quash/config.json`.
 |----------|---------|-------------|
 | `STACKS_PRIVATE_KEY` | — | Stacks private key for auto-payments |
 | `QUASH_AGENT_ID` | `claude-code@hostname` | Identifier shown in the marketplace |
-| `QUASH_API_URL` | `https://api.agentflow.dev` | API base URL |
+| `QUASH_API_URL` | `https://quash.fly.dev` | API base URL |
 
 Environment variables take priority over `~/.quash/config.json`.
 

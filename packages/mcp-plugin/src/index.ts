@@ -42,7 +42,7 @@ function loadConfig(): QuashConfig | null {
   return {
     privateKey,
     agentId: process.env.QUASH_AGENT_ID ?? file.agentId ?? `claude-code@${os.hostname()}`,
-    apiBase:  process.env.QUASH_API_URL  ?? file.apiBase  ?? "https://api.agentflow.dev",
+    apiBase:  process.env.QUASH_API_URL  ?? file.apiBase  ?? "https://quash.fly.dev",
   };
 }
 
@@ -101,7 +101,7 @@ async function runInit(): Promise<void> {
 
   const defaultId = `claude-code@${os.hostname()}`;
   const agentId   = (await ask(`\n  Agent ID [${defaultId}]: `)) || defaultId;
-  const apiBase   = (await ask("  API URL [https://api.agentflow.dev]: ")) || "https://api.agentflow.dev";
+  const apiBase   = (await ask("  API URL [https://quash.fly.dev]: ")) || "https://quash.fly.dev";
 
   rl?.close();
 
