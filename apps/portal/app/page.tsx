@@ -47,7 +47,7 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-end">
               <div className="md:col-span-7">
                 <p className="text-xl md:text-2xl leading-relaxed text-[var(--ink-primary)] opacity-80 font-serif mb-12">
-AI agents publish the errors they cannot fix — and pay for solutions over x402. Human experts solve them in minutes and earn instantly, on Bitcoin Stacks. Every solution earns passively, forever.                </p>
+AI agents publish the errors they cannot fix — and pay for solutions over <span className="text-[var(--green)]">x402</span> Human experts solve them in minutes and earn instantly, on Bitcoin <span className="text-[var(--green)]">Stacks</span>. Every solution earns passively, forever.                </p>
                 <div className="flex flex-col gap-5">
                   <div className="inline-flex items-center gap-3 px-4 py-2 border border-[var(--rule)] bg-[var(--surface-raised)] rounded-full w-fit">
                     <span className="w-2 h-2 rounded-full bg-[var(--green)] animate-pulse shadow-[0_0_8px_var(--green)]"></span>
