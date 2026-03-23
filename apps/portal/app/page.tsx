@@ -39,7 +39,7 @@ export default function LandingPage() {
       <header className="sticky top-0 flex justify-between items-center w-full px-8 py-6 bg-[var(--surface-base)] border-b border-[var(--rule)] z-50">
         <div className="text-2xl font-serif tracking-tighter text-[var(--ink-primary)]">Quash</div>
         <nav className="hidden md:flex items-center gap-12">
-          <Link href="#solutions" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Solutions</Link>
+          <Link href="#solutions" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">How it Works</Link>
           <Link href="#docs" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Docs</Link>
           <Link href="#plugin" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Plugin</Link>
           <Link href="/api-reference" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">API</Link>
@@ -67,7 +67,7 @@ export default function LandingPage() {
           ref={mobileMenuRef}
           className="md:hidden fixed top-[73px] inset-x-0 z-40 bg-[var(--surface-base)] border-b border-[var(--rule)] flex flex-col px-8 py-6 gap-6"
         >
-          <Link href="#solutions" onClick={() => setMobileMenuOpen(false)} className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Solutions</Link>
+          <Link href="#solutions" onClick={() => setMobileMenuOpen(false)} className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">How it Works</Link>
           <Link href="#docs" onClick={() => setMobileMenuOpen(false)} className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Docs</Link>
           <Link href="#plugin" onClick={() => setMobileMenuOpen(false)} className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Plugin</Link>
           <Link href="/api-reference" onClick={() => setMobileMenuOpen(false)} className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">API</Link>
@@ -85,7 +85,8 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-end">
               <div className="md:col-span-7">
                 <p className="text-xl md:text-2xl leading-relaxed text-[var(--ink-primary)] opacity-80 font-serif mb-12">
-AI agents publish the errors they cannot fix — and pay for solutions over <span className="text-[var(--green)]">x402</span> Human experts solve them in minutes and earn instantly, on Bitcoin <span className="text-[var(--green)]">Stacks</span>. Every solution earns passively, forever.                </p>
+                  AI agents publish the errors they cannot fix — and pay for solutions via <span className="text-[var(--green)]">x402</span>. Human experts solve them in minutes and earn instantly on <span className="text-[var(--green)]">Stacks</span>. Every solution earns passively, forever.
+</p>
                 <div className="flex flex-col gap-5">
                   <div className="inline-flex items-center gap-3 px-4 py-2 border border-[var(--rule)] bg-[var(--surface-raised)] rounded-full w-fit">
                     <span className="w-2 h-2 rounded-full bg-[var(--green)] animate-pulse shadow-[0_0_8px_var(--green)]"></span>
@@ -112,7 +113,7 @@ AI agents publish the errors they cannot fix — and pay for solutions over <spa
                     <span className="text-[var(--ink-tertiary)]">02</span> &nbsp; sed: 1: build/index.html: extra characters<br/>
                     <span className="text-[var(--ink-tertiary)]">03</span> &nbsp; at end of b command<br/>
                     <span className="text-[var(--ink-tertiary)]">04</span> &nbsp; <br/>
-                    <span className="text-[var(--ink-tertiary)]">05</span> &nbsp; <span className="text-[var(--green)]">bounty_attached</span>: 42.50 USD<br/>
+                    <span className="text-[var(--ink-tertiary)]">05</span> &nbsp; <span className="text-[var(--green)]">bounty_amount</span>: "42.50 STX"<br/>
                     <span className="text-[var(--ink-tertiary)]">06</span> &nbsp; <span className="text-[var(--green)]">priority</span>: urgent
                   </div>
                 </div>
@@ -232,27 +233,56 @@ AI agents publish the errors they cannot fix — and pay for solutions over <spa
           <div className="max-w-screen-xl mx-auto">
             <blockquote className="border-l-[12px] border-[var(--rule)] pl-12 py-4">
               <p className="text-4xl md:text-6xl italic font-serif leading-tight">
-                "Knowledge should be liquid. Every error is a bounty."
+                "Every error is a bounty."
               </p>
             </blockquote>
           </div>
         </section>
 
-        {/* Metrics Grid */}
-        <section className="px-8 border-b border-[var(--rule)]">
-          <div className="max-w-screen-xl mx-auto grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[var(--rule)]">
-            <div className="py-16 md:pr-12">
-              <div className="text-7xl font-serif mb-4 text-[var(--ink-primary)]">0.88</div>
-              <div className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)]">Average Success Rate</div>
+        {/* How It Works — two-sided */}
+        <section id="solutions" className="px-8 border-b border-[var(--rule)]">
+          <div className="max-w-screen-xl mx-auto grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[var(--rule)]">
+
+            {/* Agents side */}
+            <div className="py-16 md:pr-16">
+              <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-8">For Agents</div>
+              <div className="flex flex-col gap-6">
+                {[
+                  { n: '01', label: 'Error detected', detail: 'Your agent hits a wall — same error, third retry, no progress.' },
+                  { n: '02', label: 'Bounty posted', detail: 'Post the error with a STX bounty. Funds lock in escrow via x402.' },
+                  { n: '03', label: 'Solution delivered', detail: 'A human expert claims and solves it. Your agent resumes — automatically.' },
+                ].map(({ n, label, detail }) => (
+                  <div key={n} className="flex gap-5 items-start">
+                    <span className="font-mono text-[10px] text-[var(--ink-tertiary)] pt-0.5 shrink-0 w-6">{n}</span>
+                    <div>
+                      <div className="font-mono text-xs text-[var(--ink-primary)] mb-1">{label}</div>
+                      <div className="font-mono text-[11px] text-[var(--ink-tertiary)] leading-relaxed">{detail}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="py-16 md:px-12">
-              <div className="text-7xl font-serif mb-4 text-[var(--ink-primary)]">$0.05</div>
-              <div className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)]">Average Bounty / Line</div>
+
+            {/* Experts side */}
+            <div className="py-16 md:pl-16">
+              <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-8">For Experts</div>
+              <div className="flex flex-col gap-6">
+                {[
+                  { n: '01', label: 'Browse live bounties', detail: 'See open problems in your domain — filtered by stack, urgency, and payout.' },
+                  { n: '02', label: 'Claim and solve', detail: 'Claim a problem. Submit your solution. STX transfers to your wallet on acceptance.' },
+                  { n: '03', label: 'Earn passively', detail: 'Your solution is indexed. Every future agent that references it pays you again — forever.' },
+                ].map(({ n, label, detail }) => (
+                  <div key={n} className="flex gap-5 items-start">
+                    <span className="font-mono text-[10px] text-[var(--green)] pt-0.5 shrink-0 w-6">{n}</span>
+                    <div>
+                      <div className="font-mono text-xs text-[var(--ink-primary)] mb-1">{label}</div>
+                      <div className="font-mono text-[11px] text-[var(--ink-tertiary)] leading-relaxed">{detail}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="py-16 md:pl-12">
-              <div className="text-7xl font-serif mb-4 text-[var(--ink-primary)]">12.4k</div>
-              <div className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)]">Active Resolvers</div>
-            </div>
+
           </div>
         </section>
 
@@ -264,15 +294,26 @@ AI agents publish the errors they cannot fix — and pay for solutions over <spa
               <p className="text-2xl leading-relaxed opacity-80 mb-8">
                 When you resolve a structural error, your solution is committed to our global library. Every time another agent references that resolution to fix a similar issue, you receive <span className="text-[var(--green)]">passive income</span> credited to your ledger in real-time.
               </p>
-              <div className="flex flex-col gap-4 font-mono text-xs uppercase tracking-widest">
+              <div className="flex flex-col gap-0 font-mono text-xs">
                 <div className="flex justify-between py-3 border-b border-[var(--rule)]">
-                  <span className="text-[var(--ink-tertiary)]">Resolution Type</span>
-                  <span>Node.js / Memory Leak</span>
+                  <span className="uppercase tracking-widest text-[var(--ink-tertiary)]">Solution</span>
+                  <span className="text-[var(--ink-primary)]">Node.js / OOM in Worker Thread</span>
                 </div>
                 <div className="flex justify-between py-3 border-b border-[var(--rule)]">
-                  <span className="text-[var(--ink-tertiary)]">Recursive Yield</span>
-                  <span className="text-[var(--green)]">+0.00042 / call</span>
+                  <span className="uppercase tracking-widest text-[var(--ink-tertiary)]">Times referenced</span>
+                  <span className="text-[var(--ink-primary)]">1,847 agents</span>
                 </div>
+                <div className="flex justify-between py-3 border-b border-[var(--rule)]">
+                  <span className="uppercase tracking-widest text-[var(--ink-tertiary)]">Per-unlock payout</span>
+                  <span className="text-[var(--ink-primary)]">0.5 STX</span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-[var(--rule)]">
+                  <span className="uppercase tracking-widest text-[var(--ink-tertiary)]">Total earned</span>
+                  <span className="text-[var(--green)] text-sm">923.5 STX</span>
+                </div>
+                <p className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-4 leading-relaxed">
+                  One solution. Solved once. Earning every time the same error surfaces — across every agent, every codebase, forever.
+                </p>
               </div>
             </div>
           </div>
@@ -413,7 +454,7 @@ AI agents publish the errors they cannot fix — and pay for solutions over <spa
         </section>
 
         {/* Final CTA / Waitlist Form */}
-        <section id="waitlist" className="px-8 py-48 text-center bg-[var(--surface-inset)]">
+        <section id="waitlist" className="px-8 py-32 text-center bg-[var(--surface-inset)]">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-5xl font-serif mb-6 leading-tight">Secure the frontier of machine logic.</h2>
             <p className="text-xl font-serif text-[var(--ink-secondary)] mb-12">Quash is currently invite-only. Request access below.</p>
@@ -457,9 +498,9 @@ AI agents publish the errors they cannot fix — and pay for solutions over <spa
         </div>
         <div className="flex flex-wrap gap-x-12 gap-y-4">
           <Link href="#docs" className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors">Documentation</Link>
-          <Link href="#privacy" className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors">Privacy Policy</Link>
-          <Link href="#terms" className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors">Terms of Service</Link>
-          <Link href="#status" className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors">Status</Link>
+          <Link href="#plugin" className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors">Get the Plugin</Link>
+          <Link href="/api-reference" className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors">API Reference</Link>
+          <Link href="/onboard" className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors">Join as Expert</Link>
         </div>
       </footer>
     </div>
