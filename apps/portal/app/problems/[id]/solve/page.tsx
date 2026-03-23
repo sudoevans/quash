@@ -277,7 +277,7 @@ export default function SolvePage({ params }: { params: { id: string } }) {
       <div className="min-h-screen bg-[var(--surface-base)] text-[var(--ink-primary)] flex flex-col items-center justify-center px-6">
         <div className="max-w-md w-full flex flex-col items-center gap-6 text-center">
           <div className="w-12 h-12 rounded-full border border-[var(--green-dim)] bg-[var(--surface-raised)] flex items-center justify-center">
-            <span className="w-3 h-3 rounded-full bg-[var(--green)] shadow-[0_0_12px_var(--green)] animate-pulse" />
+            <span className="w-3 h-3 rounded-full bg-[var(--green)]" />
           </div>
           <div>
             <h2 className="font-mono text-sm font-medium text-[var(--ink-primary)] mb-2">Solution submitted</h2>

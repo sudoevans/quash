@@ -177,8 +177,8 @@ export default function LandingPage() {
                       sizes="(max-width: 768px) 100vw, 50vw"
                     />
                     {/* Vignette: bright centre, dark sides + bottom */}
-                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 80% at 50% 40%, transparent 30%, rgba(12,12,12,0.75) 100%)' }} />
-                    <div className="absolute inset-x-0 bottom-0 h-28 pointer-events-none" style={{ background: 'linear-gradient(to top, var(--surface-base) 15%, transparent)' }} />
+                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 90% 90% at 50% 35%, transparent 55%, rgba(12,12,12,0.5) 100%)' }} />
+                    <div className="absolute inset-x-0 bottom-0 h-16 pointer-events-none" style={{ background: 'linear-gradient(to top, var(--surface-base) 0%, transparent)' }} />
                   </div>
                 </div>
                 <p className="font-mono text-[11px] text-[var(--ink-tertiary)] leading-relaxed">
@@ -198,7 +198,7 @@ export default function LandingPage() {
                   style={{
                     background: 'var(--surface-base)',
                     border: '1px solid rgba(255,255,255,0.07)',
-                    boxShadow: '0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 80px rgba(16,185,129,0.05)',
+                    boxShadow: '0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)',
                   }}
                 >
                   {/* Title bar */}
@@ -215,8 +215,8 @@ export default function LandingPage() {
                       sizes="(max-width: 768px) 100vw, 50vw"
                     />
                     {/* Vignette: bright centre, dark sides + bottom */}
-                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 80% at 50% 40%, transparent 30%, rgba(12,12,12,0.75) 100%)' }} />
-                    <div className="absolute inset-x-0 bottom-0 h-36 pointer-events-none" style={{ background: 'linear-gradient(to top, var(--surface-base) 15%, transparent)' }} />
+                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 90% 90% at 50% 35%, transparent 55%, rgba(12,12,12,0.5) 100%)' }} />
+                    <div className="absolute inset-x-0 bottom-0 h-16 pointer-events-none" style={{ background: 'linear-gradient(to top, var(--surface-base) 0%, transparent)' }} />
                   </div>
                 </div>
                 <p className="font-mono text-[11px] text-[var(--ink-tertiary)] leading-relaxed">

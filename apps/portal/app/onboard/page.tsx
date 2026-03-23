@@ -133,7 +133,7 @@ export default function OnboardPage() {
         {flow === 'returning' && (
           <div className="flex flex-col gap-5">
             <div className="rounded-lg border border-[var(--green-dim)] bg-[var(--surface-raised)] p-6 text-center">
-              <span className="w-2 h-2 rounded-full bg-[var(--green)] shadow-[0_0_8px_var(--green)] inline-block mb-4" />
+              <span className="w-2 h-2 rounded-full bg-[var(--green)] inline-block mb-4" />
               <h1 className="font-mono text-sm font-medium text-[var(--ink-primary)] mb-1">
                 Welcome back{returningName ? `, ${returningName}` : ''}
               </h1>

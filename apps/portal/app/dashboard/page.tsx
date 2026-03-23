@@ -770,7 +770,7 @@ export default function DashboardPage() {
                               </div>
                             )}
                             <div className="flex items-center gap-1 mt-0.5">
-                              <span className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ backgroundColor: '#eab308' }} />
+                              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: '#eab308' }} />
                               <span className="font-mono text-[10px] text-[var(--ink-tertiary)]">
                                 {row.pending_unlocks} awaiting payment
                               </span>

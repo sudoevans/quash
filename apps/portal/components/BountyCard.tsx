@@ -19,7 +19,7 @@ function Countdown({ expiresAt }: { expiresAt: string }) {
   const isUrgent = secs < 300;
 
   return (
-    <span className={`font-mono text-sm font-bold tabular-nums ${isUrgent ? 'text-red-400 animate-pulse' : 'text-slate-300'}`}>
+    <span className={`font-mono text-sm font-bold tabular-nums ${isUrgent ? 'text-[var(--danger)]' : 'text-slate-300'}`}>
       {h > 0 ? `${h}h ` : ''}{String(m).padStart(2, '0')}:{String(s).padStart(2, '0')}
     </span>
   );
