@@ -494,8 +494,11 @@ export default function LandingPage() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full sm:w-auto bg-[var(--ink-primary)] text-[var(--surface-base)] px-10 py-5 font-mono text-sm uppercase tracking-[0.15em] font-bold hover:bg-[var(--green)] hover:text-white transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto bg-[var(--ink-primary)] text-[var(--surface-base)] px-10 py-5 font-mono text-sm uppercase tracking-[0.15em] font-bold hover:bg-[var(--green)] hover:text-white transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
+                    {submitting && (
+                      <span className="inline-block w-3.5 h-3.5 rounded-full border-[1.5px] border-current border-t-transparent animate-spin" />
+                    )}
                     {submitting ? 'Joining…' : 'Join Waitlist'}
                   </button>
                 </form>
