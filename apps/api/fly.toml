@@ -6,6 +6,9 @@
 app = 'quash'
 primary_region = 'ams'
 
+[deploy]
+  release_command = "npx prisma db push --schema prisma/schema.prisma --skip-generate"
+
 [build]
 
 [http_service]

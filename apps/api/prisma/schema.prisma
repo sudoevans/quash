@@ -77,3 +77,9 @@ model Payment {
   status     String   @default("confirmed")
   createdAt  DateTime @default(now())
 }
+
+model WaitlistEntry {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}

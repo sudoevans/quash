@@ -8,6 +8,8 @@ import { useEffect, useRef } from 'react';
 export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
@@ -28,9 +30,30 @@ export default function LandingPage() {
     setTimeout(() => setCopiedCmd(null), 2000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) setSubmitted(true);
+    if (!email) return;
+    setSubmitting(true);
+    setFormError('');
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? 'https://quash.fly.dev'}/waitlist`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error?.message ?? 'Something went wrong. Please try again.');
+      }
+      setSubmitted(true);
+    } catch (err: any) {
+      setFormError(err?.message ?? 'Could not join waitlist. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -456,24 +479,30 @@ export default function LandingPage() {
             <p className="text-xl font-serif text-[var(--ink-secondary)] mb-12">Quash is currently invite-only. Request access below.</p>
             
             {!submitted ? (
-              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 items-center justify-center max-w-lg mx-auto">
-                <label htmlFor="waitlist-email" className="sr-only">Email address</label>
-                <input
-                  id="waitlist-email"
-                  type="email"
-                  required
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[var(--surface-base)] border border-[var(--rule)] px-6 py-5 font-mono text-sm text-[var(--ink-primary)] placeholder-[var(--ink-tertiary)] focus:outline-none focus:border-[var(--green)] transition-colors"
-                />
-                <button 
-                  type="submit"
-                  className="w-full sm:w-auto bg-[var(--ink-primary)] text-[var(--surface-base)] px-10 py-5 font-mono text-sm uppercase tracking-[0.15em] font-bold hover:bg-[var(--green)] hover:text-white transition-colors whitespace-nowrap"
-                >
-                  Join Waitlist
-                </button>
-              </form>
+              <>
+                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 items-center justify-center max-w-lg mx-auto">
+                  <label htmlFor="waitlist-email" className="sr-only">Email address</label>
+                  <input
+                    id="waitlist-email"
+                    type="email"
+                    required
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-[var(--surface-base)] border border-[var(--rule)] px-6 py-5 font-mono text-sm text-[var(--ink-primary)] placeholder-[var(--ink-tertiary)] focus:outline-none focus:border-[var(--green)] transition-colors"
+                  />
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full sm:w-auto bg-[var(--ink-primary)] text-[var(--surface-base)] px-10 py-5 font-mono text-sm uppercase tracking-[0.15em] font-bold hover:bg-[var(--green)] hover:text-white transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? 'Joining…' : 'Join Waitlist'}
+                  </button>
+                </form>
+                {formError && (
+                  <p className="font-mono text-xs text-[var(--danger)] mt-4">{formError}</p>
+                )}
+              </>
             ) : (
               <div className="inline-flex items-center gap-3 px-8 py-6 border border-[var(--green)] bg-[var(--surface-base)]">
                 <span className="w-2 h-2 rounded-full bg-[var(--green)]"></span>

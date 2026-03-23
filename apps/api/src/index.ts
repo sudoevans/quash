@@ -8,6 +8,7 @@ import feedbackRouter from './routes/feedback';
 import webhooksRouter from './routes/webhooks';
 import authRouter from './routes/auth';
 import agentsRouter from './routes/agents';
+import waitlistRouter from './routes/waitlist';
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use('/solve', solveRouter);
 app.use('/problems', problemsRouter);
 app.use('/feedback', feedbackRouter);
 app.use('/webhooks', webhooksRouter);
+app.use('/waitlist', waitlistRouter);
 
 // ---- 404 Fallthrough ----
 app.use((_req, res) => {
