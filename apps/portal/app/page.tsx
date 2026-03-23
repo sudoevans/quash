@@ -5,11 +5,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useRef } from 'react';
 
+type Toast = { id: number; message: string; sub?: string; type: 'success' | 'error' | 'excited' };
+
 export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [formError, setFormError] = useState('');
+  const [toasts, setToasts] = useState<Toast[]>([]);
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
@@ -24,6 +26,12 @@ export default function LandingPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [mobileMenuOpen]);
 
+  const addToast = (toast: Omit<Toast, 'id'>) => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { ...toast, id }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 5000);
+  };
+
   const copyCmd = (key: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedCmd(key);
@@ -34,7 +42,6 @@ export default function LandingPage() {
     e.preventDefault();
     if (!email) return;
     setSubmitting(true);
-    setFormError('');
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL ?? 'https://quash.fly.dev'}/waitlist`,
@@ -44,13 +51,30 @@ export default function LandingPage() {
           body: JSON.stringify({ email }),
         }
       );
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         throw new Error(data?.error?.message ?? 'Something went wrong. Please try again.');
       }
-      setSubmitted(true);
+      if (data.status === 'already_registered') {
+        addToast({
+          type: 'excited',
+          message: "You're already on the list!",
+          sub: "We haven't forgotten you — we'll be in touch soon.",
+        });
+      } else {
+        setSubmitted(true);
+        addToast({
+          type: 'success',
+          message: 'Request received.',
+          sub: 'Check your inbox for a confirmation email.',
+        });
+      }
     } catch (err: any) {
-      setFormError(err?.message ?? 'Could not join waitlist. Please try again.');
+      addToast({
+        type: 'error',
+        message: 'Could not join waitlist.',
+        sub: err?.message ?? 'Please try again.',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -502,9 +526,6 @@ export default function LandingPage() {
                     {submitting ? 'Joining…' : 'Join Waitlist'}
                   </button>
                 </form>
-                {formError && (
-                  <p className="font-mono text-xs text-[var(--danger)] mt-4">{formError}</p>
-                )}
               </>
             ) : (
               <div className="inline-flex items-center gap-3 px-8 py-6 border border-[var(--green)] bg-[var(--surface-base)]">
@@ -531,6 +552,34 @@ export default function LandingPage() {
           <Link href="/onboard" className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors">Join as Expert</Link>
         </div>
       </footer>
+
+      {/* Toast notifications */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none">
+        {toasts.map(t => (
+          <div
+            key={t.id}
+            className={`pointer-events-auto animate-toast-in flex items-start gap-3 px-5 py-4 border max-w-[300px] ${
+              t.type === 'error'
+                ? 'border-[var(--danger)] bg-[var(--surface-inset)]'
+                : 'border-[var(--green)] bg-[var(--surface-inset)]'
+            }`}
+          >
+            <span className={`text-sm mt-0.5 flex-shrink-0 font-mono ${t.type === 'error' ? 'text-[var(--danger)]' : 'text-[var(--green)]'}`}>
+              {t.type === 'excited' ? '✦' : t.type === 'success' ? '✓' : '✕'}
+            </span>
+            <div>
+              <p className={`font-mono text-[10px] uppercase tracking-[0.12em] font-bold ${t.type === 'error' ? 'text-[var(--danger)]' : 'text-[var(--green)]'}`}>
+                {t.message}
+              </p>
+              {t.sub && (
+                <p className="font-mono text-[11px] text-[var(--ink-secondary)] mt-1 leading-relaxed">
+                  {t.sub}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
