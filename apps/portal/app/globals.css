@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Space+Grotesk:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -17,6 +17,9 @@
 
   --green:     #3D7A5A;
   --green-dim: #2A5540;
+
+  --danger:     #ef4444;
+  --danger-dim: #3a1a1a;
 }
 
 /* ─── Base Reset ──────────────────────────────────────────────────────────── */
@@ -59,22 +62,6 @@ kbd,
   border: none;
   border-top: 1px solid var(--rule);
   width: 100%;
-}
-
-/* ─── Live Pulse Dot ─────────────────────────────────────────────────────── */
-@keyframes pulse-live {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.25; }
-}
-
-.live-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: var(--green);
-  animation: pulse-live 2s ease-in-out infinite;
-  flex-shrink: 0;
 }
 
 /* ─── Stagger Animations ─────────────────────────────────────────────────── */

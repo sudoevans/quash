@@ -3,11 +3,24 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useEffect, useRef } from 'react';
 
 export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+        setMobileMenuOpen(false);
+      }
+    }
+    if (mobileMenuOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [mobileMenuOpen]);
 
   const copyCmd = (key: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -28,14 +41,39 @@ export default function LandingPage() {
         <nav className="hidden md:flex items-center gap-12">
           <Link href="#solutions" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Solutions</Link>
           <Link href="#docs" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Docs</Link>
-          <Link href="#pricing" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Pricing</Link>
+          <Link href="#plugin" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Plugin</Link>
           <Link href="/api-reference" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">API</Link>
           <Link href="/onboard" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Login</Link>
         </nav>
-        <button className="font-mono text-xs uppercase tracking-widest px-6 py-2 bg-[var(--ink-primary)] text-[var(--surface-base)] border border-[var(--ink-primary)] hover:opacity-80 transition-opacity">
-          Join Waitlist
-        </button>
+        <div className="flex items-center gap-3">
+          <Link href="#waitlist" className="font-mono text-xs uppercase tracking-widest px-6 py-2 bg-[var(--ink-primary)] text-[var(--surface-base)] border border-[var(--ink-primary)] hover:opacity-80 transition-opacity">
+            Join Waitlist
+          </Link>
+          {/* Mobile menu toggle */}
+          <button
+            className="md:hidden flex flex-col gap-1.5 w-8 h-8 items-center justify-center"
+            aria-label="Toggle navigation"
+            onClick={() => setMobileMenuOpen(o => !o)}
+          >
+            <span className={`block w-5 h-px bg-[var(--ink-primary)] transition-all duration-200 ${mobileMenuOpen ? 'rotate-45 translate-y-[5px]' : ''}`} />
+            <span className={`block w-5 h-px bg-[var(--ink-primary)] transition-all duration-200 ${mobileMenuOpen ? '-rotate-45 -translate-y-[2px]' : ''}`} />
+          </button>
+        </div>
       </header>
+
+      {/* Mobile nav drawer */}
+      {mobileMenuOpen && (
+        <div
+          ref={mobileMenuRef}
+          className="md:hidden fixed top-[73px] inset-x-0 z-40 bg-[var(--surface-base)] border-b border-[var(--rule)] flex flex-col px-8 py-6 gap-6"
+        >
+          <Link href="#solutions" onClick={() => setMobileMenuOpen(false)} className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Solutions</Link>
+          <Link href="#docs" onClick={() => setMobileMenuOpen(false)} className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Docs</Link>
+          <Link href="#plugin" onClick={() => setMobileMenuOpen(false)} className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Plugin</Link>
+          <Link href="/api-reference" onClick={() => setMobileMenuOpen(false)} className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">API</Link>
+          <Link href="/onboard" onClick={() => setMobileMenuOpen(false)} className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Login</Link>
+        </div>
+      )}
 
       <main>
         {/* Hero Section */}
@@ -120,7 +158,7 @@ export default function LandingPage() {
                 <div
                   className="relative rounded-2xl overflow-hidden"
                   style={{
-                    background: '#0d0d0d',
+                    background: 'var(--surface-base)',
                     border: '1px solid rgba(255,255,255,0.07)',
                     boxShadow: '0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)',
                   }}
@@ -139,8 +177,8 @@ export default function LandingPage() {
                       sizes="(max-width: 768px) 100vw, 50vw"
                     />
                     {/* Vignette: bright centre, dark sides + bottom */}
-                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 80% at 50% 40%, transparent 30%, rgba(13,13,13,0.75) 100%)' }} />
-                    <div className="absolute inset-x-0 bottom-0 h-28 pointer-events-none" style={{ background: 'linear-gradient(to top, #0d0d0d 15%, transparent)' }} />
+                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 80% at 50% 40%, transparent 30%, rgba(12,12,12,0.75) 100%)' }} />
+                    <div className="absolute inset-x-0 bottom-0 h-28 pointer-events-none" style={{ background: 'linear-gradient(to top, var(--surface-base) 15%, transparent)' }} />
                   </div>
                 </div>
                 <p className="font-mono text-[11px] text-[var(--ink-tertiary)] leading-relaxed">
@@ -158,7 +196,7 @@ export default function LandingPage() {
                 <div
                   className="relative rounded-2xl overflow-hidden"
                   style={{
-                    background: '#0d0d0d',
+                    background: 'var(--surface-base)',
                     border: '1px solid rgba(255,255,255,0.07)',
                     boxShadow: '0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 80px rgba(16,185,129,0.05)',
                   }}
@@ -177,8 +215,8 @@ export default function LandingPage() {
                       sizes="(max-width: 768px) 100vw, 50vw"
                     />
                     {/* Vignette: bright centre, dark sides + bottom */}
-                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 80% at 50% 40%, transparent 30%, rgba(13,13,13,0.75) 100%)' }} />
-                    <div className="absolute inset-x-0 bottom-0 h-36 pointer-events-none" style={{ background: 'linear-gradient(to top, #0d0d0d 15%, transparent)' }} />
+                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 80% at 50% 40%, transparent 30%, rgba(12,12,12,0.75) 100%)' }} />
+                    <div className="absolute inset-x-0 bottom-0 h-36 pointer-events-none" style={{ background: 'linear-gradient(to top, var(--surface-base) 15%, transparent)' }} />
                   </div>
                 </div>
                 <p className="font-mono text-[11px] text-[var(--ink-tertiary)] leading-relaxed">
@@ -376,15 +414,17 @@ export default function LandingPage() {
         </section>
 
         {/* Final CTA / Waitlist Form */}
-        <section className="px-8 py-48 text-center bg-[var(--surface-inset)]">
+        <section id="waitlist" className="px-8 py-48 text-center bg-[var(--surface-inset)]">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-5xl font-serif mb-6 leading-tight">Secure the frontier of machine logic.</h2>
             <p className="text-xl font-serif text-[var(--ink-secondary)] mb-12">Quash is currently invite-only. Request access below.</p>
             
             {!submitted ? (
               <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 items-center justify-center max-w-lg mx-auto">
-                <input 
-                  type="email" 
+                <label htmlFor="waitlist-email" className="sr-only">Email address</label>
+                <input
+                  id="waitlist-email"
+                  type="email"
                   required
                   placeholder="Enter your email"
                   value={email}

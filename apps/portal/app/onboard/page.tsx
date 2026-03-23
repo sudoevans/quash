@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { saveSession } from '@/lib/auth';
 import { request } from '@stacks/connect';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://quash.fly.dev';
 
 const INPUT_CLASS =
   'w-full bg-[var(--surface-inset)] border border-[var(--rule)] rounded-lg px-4 py-2.5 font-mono text-xs text-[var(--ink-primary)] placeholder-[var(--ink-tertiary)] focus:outline-none focus:border-[var(--green)] transition-colors';
@@ -122,8 +122,8 @@ export default function OnboardPage() {
               {connecting ? <><Spinner /><span>Checking…</span></> : 'Connect Wallet (Leather / Xverse)'}
             </button>
             {error && (
-              <div className="rounded-lg border border-[#3a1a1a] bg-[var(--surface-inset)] px-4 py-3">
-                <p className="font-mono text-[11px] text-[#ef4444]">{error}</p>
+              <div className="rounded-lg border border-[var(--danger-dim)] bg-[var(--surface-inset)] px-4 py-3">
+                <p className="font-mono text-[11px] text-[var(--danger)]">{error}</p>
               </div>
             )}
           </div>
@@ -203,8 +203,8 @@ export default function OnboardPage() {
               </div>
             </div>
             {error && (
-              <div className="rounded-lg border border-[#3a1a1a] bg-[var(--surface-inset)] px-4 py-3">
-                <p className="font-mono text-[11px] text-[#ef4444]">{error}</p>
+              <div className="rounded-lg border border-[var(--danger-dim)] bg-[var(--surface-inset)] px-4 py-3">
+                <p className="font-mono text-[11px] text-[var(--danger)]">{error}</p>
               </div>
             )}
             <button
