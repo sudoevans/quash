@@ -123,7 +123,7 @@ export default function LandingPage() {
         </section>
 
         {/* Product Preview Section */}
-        <section className="px-8 pt-24 pb-0 border-b border-[var(--rule)] overflow-hidden">
+        <section className="px-8 pt-24 pb-32 border-b border-[var(--rule)]">
           <div className="max-w-screen-xl mx-auto">
 
             {/* Section label + payment rail */}
@@ -241,10 +241,13 @@ export default function LandingPage() {
 
         {/* How It Works — two-sided */}
         <section id="solutions" className="px-8 border-b border-[var(--rule)]">
+          <div className="max-w-screen-xl mx-auto">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-16 mb-12">How it Works</p>
+          </div>
           <div className="max-w-screen-xl mx-auto grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[var(--rule)]">
 
             {/* Agents side */}
-            <div className="py-16 md:pr-16">
+            <div className="pb-16 md:pr-16">
               <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-8">For Agents</div>
               <div className="flex flex-col gap-6">
                 {[
@@ -264,7 +267,7 @@ export default function LandingPage() {
             </div>
 
             {/* Experts side */}
-            <div className="py-16 md:pl-16">
+            <div className="pb-16 md:pl-16">
               <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-8">For Experts</div>
               <div className="flex flex-col gap-6">
                 {[
@@ -287,8 +290,8 @@ export default function LandingPage() {
         </section>
 
         {/* Passive Income Section */}
-        <section className="px-8 py-32 border-b border-[var(--rule)]">
-          <div className="max-w-screen-xl mx-auto flex flex-col md:flex-row gap-24 items-baseline">
+        <section className="px-8 py-40 border-b border-[var(--rule)]">
+          <div className="max-w-screen-xl mx-auto flex flex-col md:flex-row gap-24 items-start">
             <h2 className="text-5xl font-serif shrink-0 text-[var(--ink-primary)]">The Ledger</h2>
             <div className="max-w-2xl">
               <p className="text-2xl leading-relaxed opacity-80 mb-8">
@@ -319,48 +322,39 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* API Reference / Footnote */}
-        <section className="px-8 py-24 border-b border-[var(--rule)]">
-          <div className="max-w-screen-xl mx-auto flex justify-between items-end">
-            <div className="max-w-md">
-              <p className="font-mono text-xs text-[var(--ink-tertiary)] leading-relaxed mb-4">
-                [REF 001] INTEGRATION_GUIDE.MD
-              </p>
-              <p className="font-serif italic text-lg opacity-60">
-                Documentation on implementing the Quash SDK into autonomous LLM workflows. Technical requirements for agent-human handoff protocols.
-              </p>
-            </div>
-            <Link href="#api" className="font-mono text-xs uppercase tracking-widest border-b border-[var(--ink-primary)] pb-1 hover:text-[var(--green)] hover:border-[var(--green)] transition-colors">
-              View API Reference
-            </Link>
-          </div>
-        </section>
-
         {/* Docs Section */}
         <section id="docs" className="px-8 py-24 border-b border-[var(--rule)]">
           <div className="max-w-screen-xl mx-auto">
             <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-12">Documentation</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-px border border-[var(--rule)] bg-[var(--rule)]">
-              <div className="bg-[var(--surface-base)] p-10">
-                <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-4">For Agents</div>
-                <h3 className="text-xl font-serif mb-4">MCP Plugin</h3>
-                <p className="text-sm text-[var(--ink-secondary)] leading-relaxed mb-8">
-                  Install the Quash plugin into Claude Code. Automatic error resolution — search, pay, apply, and report feedback without interrupting your workflow.
-                </p>
-                <Link href="#plugin" className="font-mono text-xs uppercase tracking-widest border-b border-[var(--ink-primary)] pb-1 hover:text-[var(--green)] hover:border-[var(--green)] transition-colors">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-px border border-[var(--rule)] bg-[var(--rule)]">
+
+              {/* Primary — For Agents / MCP Plugin — full width */}
+              <div className="md:col-span-2 bg-[var(--surface-raised)] p-10 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-4">For Agents</div>
+                  <h3 className="text-2xl md:text-3xl font-serif mb-4">MCP Plugin</h3>
+                  <p className="text-sm text-[var(--ink-secondary)] leading-relaxed max-w-xl">
+                    Install the Quash plugin into Claude Code. Automatic error resolution — search, pay, apply, and report feedback without interrupting your workflow.
+                  </p>
+                </div>
+                <Link href="#plugin" className="font-mono text-xs uppercase tracking-widest border-b border-[var(--ink-primary)] pb-1 hover:text-[var(--green)] hover:border-[var(--green)] transition-colors shrink-0">
                   Get the Plugin →
                 </Link>
               </div>
+
+              {/* Secondary — For Experts */}
               <div className="bg-[var(--surface-base)] p-10">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-4">For Experts</div>
                 <h3 className="text-xl font-serif mb-4">Solving Bounties</h3>
                 <p className="text-sm text-[var(--ink-secondary)] leading-relaxed mb-8">
-                  Browse live error bounties, submit solutions, and earn STX instantly on resolution. Your solutions earn passively every time an agent references them.
+                  Browse live error bounties, submit solutions, and earn STX instantly. Solutions earn passively every time an agent references them.
                 </p>
                 <Link href="/onboard" className="font-mono text-xs uppercase tracking-widest border-b border-[var(--ink-primary)] pb-1 hover:text-[var(--green)] hover:border-[var(--green)] transition-colors">
                   Join as Expert →
                 </Link>
               </div>
+
+              {/* Secondary — For Developers */}
               <div className="bg-[var(--surface-base)] p-10">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-4">For Developers</div>
                 <h3 className="text-xl font-serif mb-4">REST API</h3>
@@ -371,12 +365,13 @@ export default function LandingPage() {
                   View API Reference →
                 </Link>
               </div>
+
             </div>
           </div>
         </section>
 
         {/* Get the Plugin */}
-        <section id="plugin" className="px-8 py-24 border-b border-[var(--rule)]">
+        <section id="plugin" className="px-8 py-20 border-b border-[var(--rule)]">
           <div className="max-w-screen-xl mx-auto">
             <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-12">Get the Plugin</p>
 
@@ -404,7 +399,7 @@ export default function LandingPage() {
             </div>
 
             {/* Claude Code install instructions */}
-            <div className="max-w-2xl flex flex-col gap-3">
+            <div className="max-w-2xl flex flex-col gap-8">
               {/* Step 1 */}
               <div className="flex items-start gap-4">
                 <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-3.5 w-12 shrink-0">01</span>
