@@ -89,7 +89,7 @@ export default function LandingPage() {
 </p>
                 <div className="flex flex-col gap-5">
                   <div className="inline-flex items-center gap-3 px-4 py-2 border border-[var(--rule)] bg-[var(--surface-raised)] rounded-full w-fit">
-                    <span className="w-2 h-2 rounded-full bg-[var(--green)] animate-pulse shadow-[0_0_8px_var(--green)]"></span>
+                    <span className="w-2 h-2 rounded-full bg-[var(--green)]"></span>
                     <span className="font-mono text-xs uppercase tracking-widest text-[var(--ink-secondary)]">Quash is an invite-only platform</span>
                   </div>
                   <div className="flex items-center gap-4">
@@ -105,7 +105,7 @@ export default function LandingPage() {
               <div className="md:col-span-5">
                 <div className="bg-[var(--surface-inset)] p-6 border border-[var(--rule)] font-mono text-sm leading-relaxed">
                   <div className="flex items-center gap-2 mb-4">
-                    <span className="w-2 h-2 rounded-full bg-[var(--green)] shadow-[0_0_8px_var(--green)]"></span>
+                    <span className="w-2 h-2 rounded-full bg-[var(--green)]"></span>
                     <span className="text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)]">Live Bounties / Session 4092</span>
                   </div>
                   <div className="text-[var(--ink-primary)]">
@@ -168,7 +168,7 @@ export default function LandingPage() {
                     <span className="font-mono text-[9px] tracking-widest text-[var(--ink-tertiary)] uppercase">Quash · Solutions</span>
                   </div>
                   {/* Screenshot */}
-                  <div className="relative" style={{ height: '320px' }}>
+                  <div className="relative" style={{ height: '340px' }}>
                     <Image
                       src="/Qush solutions 2026-03-22 094548.png"
                       alt="Quash — Solution Registry"
@@ -206,7 +206,7 @@ export default function LandingPage() {
                     <span className="font-mono text-[9px] tracking-widest text-[var(--ink-tertiary)] uppercase">Quash · Earnings</span>
                   </div>
                   {/* Screenshot */}
-                  <div className="relative" style={{ height: '360px' }}>
+                  <div className="relative" style={{ height: '340px' }}>
                     <Image
                       src="/Quash Earnings 2026-03-22 181129.png"
                       alt="Quash — Expert Earnings"
@@ -241,8 +241,9 @@ export default function LandingPage() {
 
         {/* How It Works — two-sided */}
         <section id="solutions" className="px-8 border-b border-[var(--rule)]">
-          <div className="max-w-screen-xl mx-auto">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-16 mb-12">How it Works</p>
+          <div className="max-w-screen-xl mx-auto pt-16 mb-12">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-3">How it Works</p>
+            <h2 className="text-3xl md:text-4xl font-serif leading-tight tracking-tight">Two sides. One market.</h2>
           </div>
           <div className="max-w-screen-xl mx-auto grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[var(--rule)]">
 
@@ -378,21 +379,21 @@ export default function LandingPage() {
             {/* AI tool tabs */}
             <div className="flex items-center gap-3 mb-10">
               {/* Claude Code — active */}
-              <div className="flex items-center gap-2 px-4 py-2 border border-[var(--green)] rounded-full">
-                <Image src="/claude-ai-icon.png" alt="Claude" width={16} height={16} className="w-4 h-4 rounded-sm" />
+              <div className="flex items-center gap-2.5 px-5 py-2.5 border border-[var(--green)] rounded-full">
+                <Image src="/claude-ai-icon.png" alt="Claude" width={22} height={22} className="w-5 h-5 rounded-sm" />
                 <span className="font-mono text-xs text-[var(--green)]">Claude Code</span>
               </div>
 
               {/* Gemini — coming soon */}
-              <div className="flex items-center gap-2 px-4 py-2 border border-[var(--rule)] rounded-full opacity-50 cursor-not-allowed select-none">
-                <Image src="/google-gemini-icon.png" alt="Gemini" width={16} height={16} className="w-4 h-4" />
+              <div className="flex items-center gap-2.5 px-5 py-2.5 border border-[var(--rule)] rounded-full opacity-40 cursor-not-allowed select-none">
+                <Image src="/google-gemini-icon.png" alt="Gemini" width={22} height={22} className="w-5 h-5" />
                 <span className="font-mono text-xs text-[var(--ink-tertiary)]">Gemini</span>
                 <span className="font-mono text-[9px] text-[var(--ink-tertiary)] border border-[var(--rule)] rounded-full px-1.5 py-0.5 ml-1">soon</span>
               </div>
 
               {/* Cursor — coming soon */}
-              <div className="flex items-center gap-2 px-4 py-2 border border-[var(--rule)] rounded-full opacity-50 cursor-not-allowed select-none">
-                <Image src="/Cursor Logo.png" alt="Cursor" width={16} height={16} className="w-4 h-4" />
+              <div className="flex items-center gap-2.5 px-5 py-2.5 border border-[var(--rule)] rounded-full opacity-40 cursor-not-allowed select-none">
+                <Image src="/Cursor Logo.png" alt="Cursor" width={22} height={22} className="w-5 h-5" />
                 <span className="font-mono text-xs text-[var(--ink-tertiary)]">Cursor</span>
                 <span className="font-mono text-[9px] text-[var(--ink-tertiary)] border border-[var(--rule)] rounded-full px-1.5 py-0.5 ml-1">soon</span>
               </div>
@@ -475,7 +476,7 @@ export default function LandingPage() {
               </form>
             ) : (
               <div className="inline-flex items-center gap-3 px-8 py-6 border border-[var(--green)] bg-[var(--surface-base)]">
-                <span className="w-2 h-2 rounded-full bg-[var(--green)] shadow-[0_0_8px_var(--green)]"></span>
+                <span className="w-2 h-2 rounded-full bg-[var(--green)]"></span>
                 <span className="font-mono text-sm uppercase tracking-widest text-[var(--green)]">Request received. We will be in touch.</span>
               </div>
             )}
