@@ -146,7 +146,7 @@ const TERM_COLOR: Record<string, string> = {
 const MONO = '"DM Mono","Courier New",monospace';
 const LINE_BASE = `font-family:${MONO};font-size:12.5px;line-height:1.7;display:block;margin-bottom:1px;`;
 
-function appendTermLine(parent: HTMLElement, cls: string, text: string) {
+function appendTermLine(parent: HTMLElement, cls: string, text: string, reduced = false) {
   const el = document.createElement('span');
   if (cls === 'gap') {
     el.style.cssText = 'display:block;height:10px;';
@@ -155,16 +155,27 @@ function appendTermLine(parent: HTMLElement, cls: string, text: string) {
   }
   const color = TERM_COLOR[cls] ?? '#8a8780';
   const extra = cls === 'sub' ? 'padding-left:18px;' : '';
-  el.style.cssText = `${LINE_BASE}color:${color};${extra}opacity:0;transform:translateY(2px);transition:opacity 0.15s,transform 0.15s;`;
+  // Reduced motion: show immediately, no fade-in
+  el.style.cssText = reduced
+    ? `${LINE_BASE}color:${color};${extra}`
+    : `${LINE_BASE}color:${color};${extra}opacity:0;transform:translateY(2px);transition:opacity 0.15s,transform 0.15s;`;
   if (cls === 'bullet') {
-    el.innerHTML = `<span style="color:#8a8780;font-size:10px;vertical-align:middle;position:relative;top:-1px;">● </span>${text}`;
+    const dot = document.createElement('span');
+    dot.style.cssText = 'color:#8a8780;font-size:10px;vertical-align:middle;position:relative;top:-1px;';
+    dot.textContent = '● ';
+    el.appendChild(dot);
+    el.appendChild(document.createTextNode(text));
   } else if (cls === 'sub') {
-    el.innerHTML = `<span style="color:#555350;font-size:11px;">L </span>${text}`;
+    const l = document.createElement('span');
+    l.style.cssText = 'color:#555350;font-size:11px;';
+    l.textContent = 'L ';
+    el.appendChild(l);
+    el.appendChild(document.createTextNode(text));
   } else {
     el.textContent = text;
   }
   parent.appendChild(el);
-  requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'none'; });
+  if (!reduced) requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'none'; });
 }
 
 function runTermPhases(
@@ -173,20 +184,28 @@ function runTermPhases(
   pushTimer: (id: ReturnType<typeof setTimeout>) => void,
   wordTimerRef: { current: ReturnType<typeof setInterval> | null },
   phaseTimerRef: { current: ReturnType<typeof setTimeout> | null },
+  reduced = false,
 ) {
   if (phaseIdx >= phases.length) return;
   const phase = phases[phaseIdx];
 
+  // Build thinking row with direct DOM refs — no getElementById needed
   const thinkEl = document.createElement('div');
   thinkEl.style.cssText = 'display:flex;align-items:center;gap:9px;margin-bottom:4px;';
-  const wordId = `tw-${phaseIdx}-${Date.now()}`;
-  thinkEl.innerHTML = `<span style="color:#c87941;font-size:15px;line-height:1;animation:quash-th-pulse 0.9s ease-in-out infinite alternate;">+</span><span id="${wordId}" style="font-family:${MONO};color:#c87941;font-size:13px;font-style:italic;">Contemplating…</span>`;
+  const plusSpan = document.createElement('span');
+  plusSpan.style.cssText = 'color:#c87941;font-size:15px;line-height:1;animation:quash-th-pulse 0.9s ease-in-out infinite alternate;';
+  plusSpan.textContent = '+';
+  const wordSpan = document.createElement('span');
+  wordSpan.style.cssText = `font-family:${MONO};color:#c87941;font-size:13px;font-style:italic;`;
+  wordSpan.textContent = 'Contemplating…';
+  thinkEl.appendChild(plusSpan);
+  thinkEl.appendChild(wordSpan);
   thinkWrap.appendChild(thinkEl);
 
+  // Cache reference — no DOM query needed inside the interval
   let wi = 0;
   wordTimerRef.current = setInterval(() => {
-    const wEl = document.getElementById(wordId);
-    if (wEl) wEl.textContent = THINKING_WORDS[wi = (wi + 1) % THINKING_WORDS.length];
+    wordSpan.textContent = THINKING_WORDS[wi = (wi + 1) % THINKING_WORDS.length];
   }, 850);
 
   phaseTimerRef.current = setTimeout(() => {
@@ -195,7 +214,7 @@ function runTermPhases(
 
     phase.lines.forEach(line => {
       const t = setTimeout(() => {
-        appendTermLine(outputWrap, line.cls, line.text);
+        appendTermLine(outputWrap, line.cls, line.text, reduced);
         body.scrollTop = body.scrollHeight;
       }, line.d);
       pushTimer(t);
@@ -207,10 +226,10 @@ function runTermPhases(
         const sep = document.createElement('span');
         sep.style.cssText = 'display:block;height:10px;';
         outputWrap.appendChild(sep);
-        runTermPhases(phases, phaseIdx + 1, thinkWrap, outputWrap, body, pushTimer, wordTimerRef, phaseTimerRef);
-      } else {
+        runTermPhases(phases, phaseIdx + 1, thinkWrap, outputWrap, body, pushTimer, wordTimerRef, phaseTimerRef, reduced);
+      } else if (!reduced) {
         const cur = document.createElement('span');
-        cur.style.cssText = `display:inline-block;width:8px;height:14px;background:#d4d0c8;vertical-align:middle;animation:quash-blink 1.1s step-end infinite;margin-left:2px;`;
+        cur.style.cssText = 'display:inline-block;width:8px;height:14px;background:#d4d0c8;vertical-align:middle;animation:quash-blink 1.1s step-end infinite;margin-left:2px;';
         outputWrap.appendChild(cur);
       }
     }, lastD + 600);
@@ -223,21 +242,44 @@ function animateTermStep(
   pushTimer: (id: ReturnType<typeof setTimeout>) => void,
   wordTimerRef: { current: ReturnType<typeof setInterval> | null },
   phaseTimerRef: { current: ReturnType<typeof setTimeout> | null },
+  reduced = false,
 ) {
   const step = TERMINAL_STEPS[stepIdx];
   body.innerHTML = '';
 
+  // Build prompt row with textContent — no innerHTML
   const promptRow = document.createElement('div');
   promptRow.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;';
-  promptRow.innerHTML = `<span style="color:#c87941;font-size:13px;font-weight:600;flex-shrink:0;padding-top:1px;line-height:1.6;">&gt;</span><span style="font-family:${MONO};font-size:13px;color:#d4d0c8;line-height:1.6;font-weight:500;">${step.prompt.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`;
+  const arrow = document.createElement('span');
+  arrow.style.cssText = 'color:#c87941;font-size:13px;font-weight:600;flex-shrink:0;padding-top:1px;line-height:1.6;';
+  arrow.textContent = '>';
+  const promptText = document.createElement('span');
+  promptText.style.cssText = `font-family:${MONO};font-size:13px;color:#d4d0c8;line-height:1.6;font-weight:500;`;
+  promptText.textContent = step.prompt;
+  promptRow.appendChild(arrow);
+  promptRow.appendChild(promptText);
   body.appendChild(promptRow);
+
+  if (reduced) {
+    // Render all lines from all phases immediately — no animation
+    const outputWrap = document.createElement('div');
+    body.appendChild(outputWrap);
+    step.phases.forEach((phase, pi) => {
+      if (pi > 0) {
+        const sep = document.createElement('span');
+        sep.style.cssText = 'display:block;height:10px;';
+        outputWrap.appendChild(sep);
+      }
+      phase.lines.forEach(line => appendTermLine(outputWrap, line.cls, line.text, true));
+    });
+    return;
+  }
 
   const thinkWrap = document.createElement('div');
   const outputWrap = document.createElement('div');
   body.appendChild(thinkWrap);
   body.appendChild(outputWrap);
-
-  runTermPhases(step.phases, 0, thinkWrap, outputWrap, body, pushTimer, wordTimerRef, phaseTimerRef);
+  runTermPhases(step.phases, 0, thinkWrap, outputWrap, body, pushTimer, wordTimerRef, phaseTimerRef, reduced);
 }
 
 const TAB_ICONS = [
@@ -248,94 +290,129 @@ const TAB_ICONS = [
 ];
 
 function TerminalDemo() {
-  const bodyRef  = useRef<HTMLDivElement>(null);
+  const bodyRef       = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
-  const timers   = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const wordRef  = useRef<ReturnType<typeof setInterval> | null>(null);
-  const phaseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timers        = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const wordRef       = useRef<ReturnType<typeof setInterval> | null>(null);
+  const phaseRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoIdxRef    = useRef(0);
+  const reducedRef    = useRef(false);
+  const scheduleRef   = useRef<() => void>(() => {});
+  const tabRefs       = useRef<HTMLButtonElement[]>([]);
 
   function clearAll() {
     timers.current.forEach(clearTimeout);
     timers.current = [];
-    if (wordRef.current)  { clearInterval(wordRef.current);  wordRef.current  = null; }
-    if (phaseRef.current) { clearTimeout(phaseRef.current);  phaseRef.current = null; }
+    if (wordRef.current)      { clearInterval(wordRef.current);      wordRef.current      = null; }
+    if (phaseRef.current)     { clearTimeout(phaseRef.current);      phaseRef.current     = null; }
+    if (autoTimerRef.current) { clearTimeout(autoTimerRef.current);  autoTimerRef.current = null; }
   }
 
   function go(idx: number) {
     clearAll();
+    autoIdxRef.current = idx;
     setActive(idx);
     if (bodyRef.current) {
-      animateTermStep(bodyRef.current, idx, (id) => timers.current.push(id), wordRef, phaseRef);
+      animateTermStep(bodyRef.current, idx, (id) => timers.current.push(id), wordRef, phaseRef, reducedRef.current);
     }
+    if (!reducedRef.current) scheduleRef.current();
   }
 
   useEffect(() => {
-    go(0);
+    reducedRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     const calcDur = (s: TermStep) =>
       s.phases.reduce((a, p) => a + p.thinkingMs + p.lines[p.lines.length - 1].d + 700, 0) + 3200;
-    let i = 0;
-    function next() {
-      i = (i + 1) % TERMINAL_STEPS.length;
-      go(i);
-      timers.current.push(setTimeout(next, calcDur(TERMINAL_STEPS[i])));
-    }
-    timers.current.push(setTimeout(next, calcDur(TERMINAL_STEPS[0])));
+
+    // Autoplay scheduler — paused by clearing autoTimerRef
+    scheduleRef.current = () => {
+      if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+      autoTimerRef.current = setTimeout(() => {
+        autoIdxRef.current = (autoIdxRef.current + 1) % TERMINAL_STEPS.length;
+        go(autoIdxRef.current);
+      }, calcDur(TERMINAL_STEPS[autoIdxRef.current]));
+    };
+
+    go(0);
     return clearAll;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  function handleTabKey(e: React.KeyboardEvent, i: number) {
+    let target = -1;
+    if (e.key === 'ArrowRight') target = (i + 1) % TERMINAL_STEPS.length;
+    if (e.key === 'ArrowLeft')  target = (i + TERMINAL_STEPS.length - 1) % TERMINAL_STEPS.length;
+    if (target >= 0) {
+      e.preventDefault();
+      go(target);
+      tabRefs.current[target]?.focus();
+    }
+  }
+
   return (
-    <>
-      <style>{`
-        @keyframes quash-blink    { 0%,100%{opacity:1} 50%{opacity:0} }
-        @keyframes quash-th-pulse { from{opacity:0.3} to{opacity:1} }
-      `}</style>
-      <div style={{width:'100%'}}>
-        {/* Tab pills */}
-        <div style={{display:'flex',gap:'4px',marginBottom:'16px',flexWrap:'wrap'}}>
-          {TERMINAL_STEPS.map((step, i) => (
-            <button
-              key={i}
-              onClick={() => go(i)}
-              style={{
-                display:'flex', alignItems:'center', gap:'7px',
-                padding:'9px 16px', borderRadius:'8px',
-                background: i === active ? '#383836' : '#2a2a28',
-                border: i === active ? '1px solid #333330' : '1px solid transparent',
-                fontFamily: MONO, fontSize:'12px',
-                color: i === active ? '#d4d0c8' : '#8a8780',
-                cursor:'pointer', whiteSpace:'nowrap',
-                transition:'background 0.15s,color 0.15s',
-              }}
-            >
-              <span style={{opacity: i === active ? 0.9 : 0.55, display:'flex'}}>
-                {TAB_ICONS[i]}
-              </span>
-              {step.label}
-            </button>
-          ))}
-        </div>
-        {/* Terminal card */}
-        <div style={{
-          width:'100%', background:'#262624', borderRadius:'10px',
-          border:'1px solid #303030', boxShadow:'0 8px 40px rgba(0,0,0,0.55)',
-          overflow:'hidden', display:'flex', flexDirection:'column', minHeight:'460px',
-        }}>
-          <div style={{
-            background:'#262624', padding:'14px 16px 13px',
-            display:'flex', alignItems:'center',
-            borderBottom:'1px solid #333330', flexShrink:0,
-          }}>
-            <div style={{display:'flex',gap:'7px'}}>
-              {[0,1,2].map(n => <div key={n} style={{width:13,height:13,borderRadius:'50%',background:'#4a4a48'}} />)}
-            </div>
-          </div>
-          <div ref={bodyRef} style={{
-            flex:1, overflowY:'auto', padding:'24px 28px 28px',
-            background:'#1c1c1a', scrollbarWidth:'thin',
-          }} />
-        </div>
+    <div style={{width:'100%'}}
+      onMouseEnter={() => { if (autoTimerRef.current) { clearTimeout(autoTimerRef.current); autoTimerRef.current = null; } }}
+      onMouseLeave={() => { if (!reducedRef.current) scheduleRef.current(); }}
+    >
+      {/* Tab pills */}
+      <div role="tablist" aria-label="Quash workflow steps" style={{display:'flex',gap:'4px',marginBottom:'16px',flexWrap:'wrap'}}>
+        {TERMINAL_STEPS.map((step, i) => (
+          <button
+            key={i}
+            role="tab"
+            aria-selected={i === active}
+            aria-controls="quash-terminal-panel"
+            tabIndex={i === active ? 0 : -1}
+            ref={(el) => { if (el) tabRefs.current[i] = el; }}
+            onClick={() => go(i)}
+            onKeyDown={(e) => handleTabKey(e, i)}
+            style={{
+              display:'flex', alignItems:'center', gap:'7px',
+              padding:'9px 16px', borderRadius:'4px',
+              background: i === active ? '#383836' : '#2a2a28',
+              border: i === active ? '1px solid #333330' : '1px solid transparent',
+              fontFamily: MONO, fontSize:'12px',
+              color: i === active ? '#d4d0c8' : '#8a8780',
+              cursor:'pointer', whiteSpace:'nowrap',
+              transition:'background 0.15s,color 0.15s',
+            }}
+          >
+            <span style={{opacity: i === active ? 0.9 : 0.55, display:'flex'}}>
+              {TAB_ICONS[i]}
+            </span>
+            {step.label}
+          </button>
+        ))}
       </div>
-    </>
+      {/* Terminal card */}
+      <div
+        id="quash-terminal-panel"
+        role="tabpanel"
+        aria-label={`${TERMINAL_STEPS[active].label} step terminal output`}
+        style={{
+          width:'100%', background:'#262624', borderRadius:'4px',
+          border:'1px solid #303030', boxShadow:'0 8px 40px rgba(0,0,0,0.55)',
+          overflow:'hidden', display:'flex', flexDirection:'column',
+          minHeight:'460px', maxHeight:'520px',
+        }}
+      >
+        <div style={{
+          background:'#262624', padding:'14px 16px 13px',
+          display:'flex', alignItems:'center',
+          borderBottom:'1px solid #333330', flexShrink:0,
+        }}>
+          <div style={{display:'flex',gap:'7px'}}>
+            {[0,1,2].map(n => <div key={n} style={{width:13,height:13,borderRadius:'50%',background:'#4a4a48'}} />)}
+          </div>
+        </div>
+        <div
+          ref={bodyRef}
+          aria-live="polite"
+          aria-label="Terminal output"
+          style={{flex:1, overflowY:'auto', padding:'24px 28px 28px', background:'#1c1c1a', scrollbarWidth:'thin'}}
+        />
+      </div>
+    </div>
   );
 }
 
