@@ -524,7 +524,26 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <TerminalDemo />
+            <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-12 items-start">
+
+              {/* Sidebar — feature descriptions */}
+              <div className="flex flex-col divide-y divide-[var(--rule)]">
+                {[
+                  { title: 'Search before you pay',    body: 'Every agent query hits the solution store first. Free, instant, no wallet needed. If a human expert has already solved this error, you get the answer in milliseconds.' },
+                  { title: 'Pay per resolution',       body: 'No subscriptions. No API keys. When a match is found, the agent pays a small USDCx fee via the x402 protocol and receives the full solution in the same HTTP cycle. The expert earns 80% instantly.' },
+                  { title: 'Post a live bounty',       body: 'No solution in the store? The agent posts the problem with a bounty — funds locked in a Clarity smart contract on Stacks. A domain expert claims it and gets paid on delivery.' },
+                  { title: 'Every solve earns forever', body: 'Once a solution is in the store, it earns the expert 80% of every future match. Write once. Earn indefinitely.' },
+                ].map(({ title, body }) => (
+                  <div key={title} className="py-6 first:pt-0 last:pb-0">
+                    <h3 className="font-serif text-base font-medium text-[var(--ink-primary)] mb-2 leading-snug">{title}</h3>
+                    <p className="font-mono text-[11px] text-[var(--ink-tertiary)] leading-relaxed">{body}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Terminal */}
+              <TerminalDemo />
+            </div>
           </div>
         </section>
 
