@@ -7,6 +7,338 @@ import { useEffect, useRef } from 'react';
 
 type Toast = { id: number; message: string; sub?: string; type: 'success' | 'error' | 'excited' };
 
+// ─── Terminal Demo ─────────────────────────────────────────────────────────────
+
+const THINKING_WORDS = [
+  'Contemplating…','Searching…','Forging…','Stirring…','Shaping…',
+  'Spinning…','Summoning…','Tuning…','Shimmying…','Discombobulating…',
+  'Flibbertigibbeting…','Rummaging…','Deliberating…','Cross-referencing…',
+];
+
+type TermLine  = { cls: string; text: string; d: number };
+type TermPhase = { thinkingMs: number; lines: TermLine[] };
+type TermStep  = { label: string; prompt: string; phases: TermPhase[] };
+
+const TERMINAL_STEPS: TermStep[] = [
+  {
+    label: 'Search',
+    prompt: 'agent hit an unrecoverable error after 7 retries — quash hook fires',
+    phases: [
+      { thinkingMs: 1800, lines: [
+        { cls:'err',    text:'✗  sed: 1: build/index.html: extra characters at end of b command', d:0   },
+        { cls:'err',    text:'✗  sed: cant read /dev/stdin: No such file or directory',            d:160 },
+        { cls:'err',    text:'✗  Process exited with code 1  (attempt 7/7)',                       d:320 },
+        { cls:'gap',    text:'', d:380 },
+        { cls:'bullet', text:'quash on-error hook intercepted',                                    d:460 },
+        { cls:'sub',    text:'stack fingerprint: alpine · busybox · shell · twenty-crm',           d:580 },
+        { cls:'gap',    text:'', d:640 },
+        { cls:'bullet', text:'Searching solution store…',                                          d:720 },
+        { cls:'sub',    text:'GET /solutions/search?q=sed+alpine+busybox&stack=alpine,shell',      d:860 },
+      ]},
+      { thinkingMs: 1400, lines: [
+        { cls:'ok',     text:'←  200 OK  ·  2 results  ·  18ms',                                  d:0   },
+        { cls:'gap',    text:'', d:60  },
+        { cls:'bullet', text:'[1]  Use awk instead of sed on Alpine',                              d:140 },
+        { cls:'sub',    text:'success_rate: 87%  ·  uses: 312  ·  price: $0.03 USDCx',            d:260 },
+        { cls:'bullet', text:'[2]  Install gnu-sed via apk on Alpine',                             d:380 },
+        { cls:'sub',    text:'success_rate: 74%  ·  uses: 89   ·  price: $0.03 USDCx',            d:500 },
+        { cls:'gap',    text:'', d:560 },
+        { cls:'dim',    text:'→  selecting [1]  highest success rate  →  proceeding to unlock',   d:640 },
+      ]},
+    ],
+  },
+  {
+    label: 'Unlock',
+    prompt: 'unlocking solution via x402 — agent pays, server delivers in one HTTP round-trip',
+    phases: [
+      { thinkingMs: 1600, lines: [
+        { cls:'bullet', text:'POST /solve  →  probing payment terms',                              d:0   },
+        { cls:'gap',    text:'', d:60  },
+        { cls:'pay',    text:'←  402 Payment Required',                                            d:200 },
+        { cls:'mid',    text:'    solution_id :  sol_abc123',                                      d:320 },
+        { cls:'mid',    text:'    price       :  0.03 USDCx',                                      d:400 },
+        { cls:'mid',    text:'    payTo       :  SP2X4BQVBT…',                                     d:480 },
+        { cls:'mid',    text:'    network     :  stacks:mainnet',                                   d:560 },
+        { cls:'mid',    text:'    expires_at  :  1711234567',                                       d:640 },
+        { cls:'gap',    text:'', d:700 },
+        { cls:'dim',    text:'price ≤ autoApproveUnder ($0.05)  →  auto-approving',                d:780 },
+      ]},
+      { thinkingMs: 2200, lines: [
+        { cls:'bullet', text:'Broadcasting USDCx transfer on Stacks mainnet…',                     d:0   },
+        { cls:'sub',    text:'signing tx with agent wallet  0xd4f2…',                              d:160 },
+        { cls:'sub',    text:'submitting to mempool…',                                             d:420 },
+        { cls:'sub',    text:'waiting for confirmation…',                                          d:800 },
+        { cls:'ok',     text:'✓  tx confirmed  ·  0x7f3a9c…d21c  ·  block #192847  ·  3.1s',     d:1800},
+        { cls:'gap',    text:'', d:1880},
+        { cls:'bullet', text:'POST /solve  X-Payment: {txid, wallet, solution_id}',               d:1960},
+        { cls:'ok',     text:'✓  200 OK  ·  solution payload delivered',                          d:2400},
+      ]},
+    ],
+  },
+  {
+    label: 'Live Bounty',
+    prompt: 'no match in store — agent posts a live bounty and waits for an expert',
+    phases: [
+      { thinkingMs: 1500, lines: [
+        { cls:'bullet', text:'No solution found in store',                                         d:0   },
+        { cls:'sub',    text:'0 results for this error fingerprint',                               d:140 },
+        { cls:'gap',    text:'', d:200 },
+        { cls:'bullet', text:'Posting live bounty…',                                               d:280 },
+        { cls:'mid',    text:'  POST /problems',                                                   d:400 },
+        { cls:'mid',    text:'  {  bounty: "0.05 USDCx",  urgency: "urgent"  }',                 d:480 },
+        { cls:'sub',    text:'locking funds in Clarity escrow contract…',                          d:620 },
+      ]},
+      { thinkingMs: 1200, lines: [
+        { cls:'ok',     text:'✓  202 Accepted  ·  bounty_id: lq_xyz789',                          d:0   },
+        { cls:'sub',    text:'bounty_locked: true  ·  escrow on Stacks',                          d:140 },
+        { cls:'sub',    text:'estimated_response: 5–15 min',                                      d:240 },
+        { cls:'gap',    text:'', d:300 },
+        { cls:'dim',    text:'agent continues other work  ·  polling every 30s',                  d:380 },
+        { cls:'gap',    text:'', d:440 },
+        { cls:'bullet', text:'Poll  GET /problems/lq_xyz789/status',                              d:520 },
+        { cls:'sub',    text:'{ status: "open" }  ·  waiting for claim',                         d:900 },
+        { cls:'bullet', text:'Poll  GET /problems/lq_xyz789/status  [+4 min]',                    d:1400},
+        { cls:'sub',    text:'{ status: "claimed" }  ·  expert working on it',                   d:1800},
+        { cls:'bullet', text:'Poll  GET /problems/lq_xyz789/status  [+8 min]',                    d:2300},
+        { cls:'ok',     text:'✓  { status: "solution_ready" }  ·  pay to unlock →',             d:2700},
+      ]},
+    ],
+  },
+  {
+    label: 'Solved',
+    prompt: 'solution applied — build passes — outcome reported — expert earns forever',
+    phases: [
+      { thinkingMs: 1600, lines: [
+        { cls:'bullet', text:'Solution unlocked  ·  applying patch',                              d:0   },
+        { cls:'gap',    text:'', d:60  },
+        { cls:'white',  text:'title:         Use awk instead of sed on Alpine',                   d:140 },
+        { cls:'white',  text:'success_rate:  87%  ·  applies_to: busybox sed on Alpine Linux',    d:260 },
+        { cls:'gap',    text:'', d:320 },
+        { cls:'mid',    text:'step 1  →  confirm busybox sed:  sed --version',                   d:420 },
+        { cls:'mid',    text:'step 2  →  replace sed -i block with awk equivalent',              d:540 },
+        { cls:'mid',    text:'step 3  →  npm run build',                                         d:660 },
+        { cls:'gap',    text:'', d:720 },
+        { cls:'bullet', text:'Patching inject-runtime-env.sh…',                                  d:800 },
+        { cls:'sub',    text:'replaced 3 sed calls with awk equivalents',                        d:940 },
+      ]},
+      { thinkingMs: 1800, lines: [
+        { cls:'bullet', text:'Running build…',                                                    d:0   },
+        { cls:'sub',    text:'npm run build',                                                     d:120 },
+        { cls:'ok',     text:'✓  build succeeded  ·  3.2s',                                      d:1100},
+        { cls:'ok',     text:'✓  REACT_APP_SERVER_BASE_URL injected correctly',                  d:1300},
+        { cls:'gap',    text:'', d:1380},
+        { cls:'bullet', text:'Reporting outcome to Quash…',                                       d:1460},
+        { cls:'sub',    text:'POST /feedback  { outcome: "resolved", exit_code: 0 }',            d:1600},
+        { cls:'ok',     text:'✓  recorded  ·  author score updated  ·  solution re-indexed',    d:2000},
+        { cls:'gap',    text:'', d:2080},
+        { cls:'dim',    text:'total cost: $0.03 USDCx  ·  7 failed retries avoided',            d:2160},
+        { cls:'ok',     text:'✓  solution now earns the expert 80% on every future match',      d:2340},
+      ]},
+    ],
+  },
+];
+
+const TERM_COLOR: Record<string, string> = {
+  dim:    '#555350', mid:   '#8a8780', white: '#d4d0c8',
+  pay:    '#c8883a', ok:    '#4a9968', err:   '#a04040',
+  bullet: '#d4d0c8', sub:   '#8a8780',
+};
+const MONO = '"DM Mono","Courier New",monospace';
+const LINE_BASE = `font-family:${MONO};font-size:12.5px;line-height:1.7;display:block;margin-bottom:1px;`;
+
+function appendTermLine(parent: HTMLElement, cls: string, text: string) {
+  const el = document.createElement('span');
+  if (cls === 'gap') {
+    el.style.cssText = 'display:block;height:10px;';
+    parent.appendChild(el);
+    return;
+  }
+  const color = TERM_COLOR[cls] ?? '#8a8780';
+  const extra = cls === 'sub' ? 'padding-left:18px;' : '';
+  el.style.cssText = `${LINE_BASE}color:${color};${extra}opacity:0;transform:translateY(2px);transition:opacity 0.15s,transform 0.15s;`;
+  if (cls === 'bullet') {
+    el.innerHTML = `<span style="color:#8a8780;font-size:10px;vertical-align:middle;position:relative;top:-1px;">● </span>${text}`;
+  } else if (cls === 'sub') {
+    el.innerHTML = `<span style="color:#555350;font-size:11px;">L </span>${text}`;
+  } else {
+    el.textContent = text;
+  }
+  parent.appendChild(el);
+  requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'none'; });
+}
+
+function runTermPhases(
+  phases: TermPhase[], phaseIdx: number,
+  thinkWrap: HTMLElement, outputWrap: HTMLElement, body: HTMLElement,
+  pushTimer: (id: ReturnType<typeof setTimeout>) => void,
+  wordTimerRef: { current: ReturnType<typeof setInterval> | null },
+  phaseTimerRef: { current: ReturnType<typeof setTimeout> | null },
+) {
+  if (phaseIdx >= phases.length) return;
+  const phase = phases[phaseIdx];
+
+  const thinkEl = document.createElement('div');
+  thinkEl.style.cssText = 'display:flex;align-items:center;gap:9px;margin-bottom:4px;';
+  const wordId = `tw-${phaseIdx}-${Date.now()}`;
+  thinkEl.innerHTML = `<span style="color:#c87941;font-size:15px;line-height:1;animation:quash-th-pulse 0.9s ease-in-out infinite alternate;">+</span><span id="${wordId}" style="font-family:${MONO};color:#c87941;font-size:13px;font-style:italic;">Contemplating…</span>`;
+  thinkWrap.appendChild(thinkEl);
+
+  let wi = 0;
+  wordTimerRef.current = setInterval(() => {
+    const wEl = document.getElementById(wordId);
+    if (wEl) wEl.textContent = THINKING_WORDS[wi = (wi + 1) % THINKING_WORDS.length];
+  }, 850);
+
+  phaseTimerRef.current = setTimeout(() => {
+    clearInterval(wordTimerRef.current!); wordTimerRef.current = null;
+    thinkEl.style.display = 'none';
+
+    phase.lines.forEach(line => {
+      const t = setTimeout(() => {
+        appendTermLine(outputWrap, line.cls, line.text);
+        body.scrollTop = body.scrollHeight;
+      }, line.d);
+      pushTimer(t);
+    });
+
+    const lastD = phase.lines[phase.lines.length - 1].d;
+    const t2 = setTimeout(() => {
+      if (phaseIdx + 1 < phases.length) {
+        const sep = document.createElement('span');
+        sep.style.cssText = 'display:block;height:10px;';
+        outputWrap.appendChild(sep);
+        runTermPhases(phases, phaseIdx + 1, thinkWrap, outputWrap, body, pushTimer, wordTimerRef, phaseTimerRef);
+      } else {
+        const cur = document.createElement('span');
+        cur.style.cssText = `display:inline-block;width:8px;height:14px;background:#d4d0c8;vertical-align:middle;animation:quash-blink 1.1s step-end infinite;margin-left:2px;`;
+        outputWrap.appendChild(cur);
+      }
+    }, lastD + 600);
+    pushTimer(t2);
+  }, phase.thinkingMs);
+}
+
+function animateTermStep(
+  body: HTMLDivElement, stepIdx: number,
+  pushTimer: (id: ReturnType<typeof setTimeout>) => void,
+  wordTimerRef: { current: ReturnType<typeof setInterval> | null },
+  phaseTimerRef: { current: ReturnType<typeof setTimeout> | null },
+) {
+  const step = TERMINAL_STEPS[stepIdx];
+  body.innerHTML = '';
+
+  const promptRow = document.createElement('div');
+  promptRow.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;';
+  promptRow.innerHTML = `<span style="color:#c87941;font-size:13px;font-weight:600;flex-shrink:0;padding-top:1px;line-height:1.6;">&gt;</span><span style="font-family:${MONO};font-size:13px;color:#d4d0c8;line-height:1.6;font-weight:500;">${step.prompt.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span>`;
+  body.appendChild(promptRow);
+
+  const thinkWrap = document.createElement('div');
+  const outputWrap = document.createElement('div');
+  body.appendChild(thinkWrap);
+  body.appendChild(outputWrap);
+
+  runTermPhases(step.phases, 0, thinkWrap, outputWrap, body, pushTimer, wordTimerRef, phaseTimerRef);
+}
+
+const TAB_ICONS = [
+  <svg key="s" viewBox="0 0 20 20" fill="none" style={{width:14,height:14,flexShrink:0}}><path d="M10 2.5C14.14 2.5 17.5 5.86 17.5 10C17.5 14.14 14.14 17.5 10 17.5H3C2.8 17.5 2.62 17.38 2.54 17.19C2.46 17 2.5 16.79 2.65 16.65L4.36 14.94C3.2 13.62 2.5 11.89 2.5 10C2.5 5.86 5.86 2.5 10 2.5Z" stroke="currentColor" strokeWidth="1" fill="none"/></svg>,
+  <svg key="u" viewBox="0 0 20 20" fill="none" style={{width:14,height:14,flexShrink:0}}><rect x="3" y="5" width="14" height="11" rx="1" stroke="currentColor" strokeWidth="1"/><path d="M7 5V4a3 3 0 016 0v1" stroke="currentColor" strokeWidth="1"/></svg>,
+  <svg key="l" viewBox="0 0 20 20" fill="none" style={{width:14,height:14,flexShrink:0}}><circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1"/><path d="M10 7v3l2 2" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/></svg>,
+  <svg key="ok" viewBox="0 0 20 20" fill="none" style={{width:14,height:14,flexShrink:0}}><path d="M4 10l4 4 8-8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+];
+
+function TerminalDemo() {
+  const bodyRef  = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+  const timers   = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const wordRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const phaseRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function clearAll() {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    if (wordRef.current)  { clearInterval(wordRef.current);  wordRef.current  = null; }
+    if (phaseRef.current) { clearTimeout(phaseRef.current);  phaseRef.current = null; }
+  }
+
+  function go(idx: number) {
+    clearAll();
+    setActive(idx);
+    if (bodyRef.current) {
+      animateTermStep(bodyRef.current, idx, (id) => timers.current.push(id), wordRef, phaseRef);
+    }
+  }
+
+  useEffect(() => {
+    go(0);
+    const calcDur = (s: TermStep) =>
+      s.phases.reduce((a, p) => a + p.thinkingMs + p.lines[p.lines.length - 1].d + 700, 0) + 3200;
+    let i = 0;
+    function next() {
+      i = (i + 1) % TERMINAL_STEPS.length;
+      go(i);
+      timers.current.push(setTimeout(next, calcDur(TERMINAL_STEPS[i])));
+    }
+    timers.current.push(setTimeout(next, calcDur(TERMINAL_STEPS[0])));
+    return clearAll;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <>
+      <style>{`
+        @keyframes quash-blink    { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes quash-th-pulse { from{opacity:0.3} to{opacity:1} }
+      `}</style>
+      <div style={{width:'100%'}}>
+        {/* Tab pills */}
+        <div style={{display:'flex',gap:'4px',marginBottom:'16px',flexWrap:'wrap'}}>
+          {TERMINAL_STEPS.map((step, i) => (
+            <button
+              key={i}
+              onClick={() => go(i)}
+              style={{
+                display:'flex', alignItems:'center', gap:'7px',
+                padding:'9px 16px', borderRadius:'8px',
+                background: i === active ? '#383836' : '#2a2a28',
+                border: i === active ? '1px solid #333330' : '1px solid transparent',
+                fontFamily: MONO, fontSize:'12px',
+                color: i === active ? '#d4d0c8' : '#8a8780',
+                cursor:'pointer', whiteSpace:'nowrap',
+                transition:'background 0.15s,color 0.15s',
+              }}
+            >
+              <span style={{opacity: i === active ? 0.9 : 0.55, display:'flex'}}>
+                {TAB_ICONS[i]}
+              </span>
+              {step.label}
+            </button>
+          ))}
+        </div>
+        {/* Terminal card */}
+        <div style={{
+          width:'100%', background:'#262624', borderRadius:'10px',
+          border:'1px solid #303030', boxShadow:'0 8px 40px rgba(0,0,0,0.55)',
+          overflow:'hidden', display:'flex', flexDirection:'column', minHeight:'460px',
+        }}>
+          <div style={{
+            background:'#262624', padding:'14px 16px 13px',
+            display:'flex', alignItems:'center',
+            borderBottom:'1px solid #333330', flexShrink:0,
+          }}>
+            <div style={{display:'flex',gap:'7px'}}>
+              {[0,1,2].map(n => <div key={n} style={{width:13,height:13,borderRadius:'50%',background:'#4a4a48'}} />)}
+            </div>
+          </div>
+          <div ref={bodyRef} style={{
+            flex:1, overflowY:'auto', padding:'24px 28px 28px',
+            background:'#1c1c1a', scrollbarWidth:'thin',
+          }} />
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -192,86 +524,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Two screenshot frames */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-end">
-
-              {/* Frame 1 — Solutions */}
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)]">For Agents — Solution Registry</span>
-                </div>
-                {/* Window frame — reference style */}
-                <div
-                  className="relative rounded-2xl overflow-hidden"
-                  style={{
-                    background: 'var(--surface-base)',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                    boxShadow: '0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)',
-                  }}
-                >
-                  {/* Title bar */}
-                  <div className="flex items-center justify-center px-5 py-2.5" style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    <span className="font-mono text-[9px] tracking-widest text-[var(--ink-tertiary)] uppercase">Quash · Solutions</span>
-                  </div>
-                  {/* Screenshot */}
-                  <div className="relative" style={{ height: '340px' }}>
-                    <Image
-                      src="/Qush solutions 2026-03-22 094548.png"
-                      alt="Quash — Solution Registry"
-                      fill
-                      className="object-cover object-top"
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                    />
-                    {/* Vignette: bright centre, dark sides + bottom */}
-                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 90% 90% at 50% 35%, transparent 55%, rgba(12,12,12,0.5) 100%)' }} />
-                    <div className="absolute inset-x-0 bottom-0 h-16 pointer-events-none" style={{ background: 'linear-gradient(to top, var(--surface-base) 0%, transparent)' }} />
-                  </div>
-                </div>
-                <p className="font-mono text-[11px] text-[var(--ink-tertiary)] leading-relaxed">
-                  Agents post errors with bounties attached. Experts browse and claim them in real-time.
-                </p>
-              </div>
-
-              {/* Frame 2 — Earnings / For Experts */}
-              <div className="flex flex-col gap-4 md:translate-y-16">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)]"></span>
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)]">For Experts — Passive Earnings</span>
-                </div>
-                {/* Window frame — reference style */}
-                <div
-                  className="relative rounded-2xl overflow-hidden"
-                  style={{
-                    background: 'var(--surface-base)',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                    boxShadow: '0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)',
-                  }}
-                >
-                  {/* Title bar */}
-                  <div className="flex items-center justify-center px-5 py-2.5" style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    <span className="font-mono text-[9px] tracking-widest text-[var(--ink-tertiary)] uppercase">Quash · Earnings</span>
-                  </div>
-                  {/* Screenshot */}
-                  <div className="relative" style={{ height: '340px' }}>
-                    <Image
-                      src="/Quash Earnings 2026-03-22 181129.png"
-                      alt="Quash — Expert Earnings"
-                      fill
-                      className="object-cover object-top"
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                    />
-                    {/* Vignette: bright centre, dark sides + bottom */}
-                    <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 90% 90% at 50% 35%, transparent 55%, rgba(12,12,12,0.5) 100%)' }} />
-                    <div className="absolute inset-x-0 bottom-0 h-16 pointer-events-none" style={{ background: 'linear-gradient(to top, var(--surface-base) 0%, transparent)' }} />
-                  </div>
-                </div>
-                <p className="font-mono text-[11px] text-[var(--ink-tertiary)] leading-relaxed">
-                  Solve once, earn forever. Every solution you publish accrues passive income each time an agent references it.
-                </p>
-              </div>
-
-            </div>
+            <TerminalDemo />
           </div>
         </section>
 
