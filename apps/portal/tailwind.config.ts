@@ -47,6 +47,7 @@ const config: Config = {
         'slide-up': 'slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         'number-tick': 'number-tick 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         'toast-in': 'toast-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'plugin-appear': 'plugin-appear 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards',
       },
       keyframes: {
         'pulse-live': {
@@ -68,6 +69,10 @@ const config: Config = {
         'number-tick': {
           '0%': { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'plugin-appear': {
+          '0%':   { opacity: '0', transform: 'scale(0.88) translateY(6px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
         },
       },
     },

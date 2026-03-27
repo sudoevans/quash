@@ -390,7 +390,7 @@ function TerminalDemo() {
         role="tabpanel"
         aria-label={`${TERMINAL_STEPS[active].label} step terminal output`}
         style={{
-          width:'100%', background:'#262624', borderRadius:'4px',
+          width:'100%', background:'#262624', borderRadius:'10px',
           border:'1px solid #303030', boxShadow:'0 8px 40px rgba(0,0,0,0.55)',
           overflow:'hidden', display:'flex', flexDirection:'column',
           minHeight:'460px', maxHeight:'520px',
@@ -409,7 +409,7 @@ function TerminalDemo() {
           ref={bodyRef}
           aria-live="polite"
           aria-label="Terminal output"
-          style={{flex:1, overflowY:'auto', padding:'24px 28px 28px', background:'#1c1c1a', scrollbarWidth:'thin'}}
+          style={{flex:1, overflowY:'hidden', padding:'24px 28px 28px', background:'#1c1c1a'}}
         />
       </div>
     </div>
@@ -423,6 +423,7 @@ export default function LandingPage() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activePlugin, setActivePlugin] = useState<'claude' | 'antigravity' | 'cursor' | 'vscode'>('claude');
   const mobileMenuRef   = useRef<HTMLDivElement>(null);
   const hamburgerRef    = useRef<HTMLButtonElement>(null);
 
@@ -495,9 +496,9 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--surface-base)] text-[var(--ink-primary)] font-serif selection:bg-[var(--green)] selection:text-[var(--ink-primary)]">
+    <div className="min-h-screen overflow-x-hidden bg-[var(--surface-base)] text-[var(--ink-primary)] font-serif selection:bg-[var(--green)] selection:text-[var(--ink-primary)]">
       {/* Top Navigation */}
-      <header className="sticky top-0 flex justify-between items-center w-full px-8 py-6 bg-[var(--surface-base)] border-b border-[var(--rule)] z-50">
+      <header className="sticky top-0 flex justify-between items-center w-full px-4 sm:px-8 py-4 sm:py-6 bg-[var(--surface-base)] border-b border-[var(--rule)] z-50">
         <div className="text-2xl font-serif tracking-tighter text-[var(--ink-primary)]">Quash</div>
         <nav className="hidden md:flex items-center gap-12">
           <Link href="#solutions" className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">How it Works</Link>
@@ -528,7 +529,7 @@ export default function LandingPage() {
       {mobileMenuOpen && (
         <div
           ref={mobileMenuRef}
-          className="md:hidden fixed top-[73px] inset-x-0 z-40 bg-[var(--surface-base)] border-b border-[var(--rule)] flex flex-col px-8 py-6 gap-6"
+          className="md:hidden fixed top-[65px] sm:top-[73px] inset-x-0 z-40 bg-[var(--surface-base)] border-b border-[var(--rule)] flex flex-col px-4 sm:px-8 py-6 gap-6"
         >
           <Link href="#solutions" onClick={() => setMobileMenuOpen(false)} className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">How it Works</Link>
           <Link href="#docs" onClick={() => setMobileMenuOpen(false)} className="text-[var(--ink-secondary)] font-mono text-xs uppercase tracking-widest hover:text-[var(--ink-primary)] transition-colors">Docs</Link>
@@ -586,11 +587,11 @@ export default function LandingPage() {
         </section>
 
         {/* Product Preview Section */}
-        <section className="px-8 pt-24 pb-32 border-b border-[var(--rule)]">
+        <section className="px-4 sm:px-8 pt-12 sm:pt-24 pb-16 sm:pb-32 border-b border-[var(--rule)]">
           <div className="max-w-screen-xl mx-auto">
 
             {/* Section label + payment rail */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-16">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8 sm:mb-16">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">The Platform</p>
                 <h2 className="text-3xl md:text-4xl font-serif leading-tight">Built for agents. Rewarding for experts.</h2>
@@ -632,10 +633,10 @@ export default function LandingPage() {
         </section>
 
         {/* Pull Quote Section */}
-        <section className="px-8 py-32 border-b border-[var(--rule)] bg-[var(--surface-raised)]">
+        <section className="px-4 sm:px-8 py-14 sm:py-32 border-b border-[var(--rule)] bg-[var(--surface-raised)]">
           <div className="max-w-screen-xl mx-auto">
-            <blockquote className="border-l-[12px] border-[var(--rule)] pl-12 py-4">
-              <p className="text-4xl md:text-6xl italic font-serif leading-tight">
+            <blockquote className="border-l-[6px] sm:border-l-[12px] border-[var(--rule)] pl-6 sm:pl-12 py-4">
+              <p className="text-3xl sm:text-4xl md:text-6xl italic font-serif leading-tight">
                 "Every error is a bounty."
               </p>
             </blockquote>
@@ -643,8 +644,8 @@ export default function LandingPage() {
         </section>
 
         {/* How It Works — two-sided */}
-        <section id="solutions" className="px-8 border-b border-[var(--rule)]">
-          <div className="max-w-screen-xl mx-auto pt-16 mb-12">
+        <section id="solutions" className="px-4 sm:px-8 border-b border-[var(--rule)]">
+          <div className="max-w-screen-xl mx-auto pt-12 sm:pt-16 mb-8 sm:mb-12">
             <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-3">How it Works</p>
             <h2 className="text-3xl md:text-4xl font-serif leading-tight tracking-tight">Two sides. One market.</h2>
           </div>
@@ -694,28 +695,28 @@ export default function LandingPage() {
         </section>
 
         {/* Passive Income Section */}
-        <section className="px-8 py-40 border-b border-[var(--rule)]">
-          <div className="max-w-screen-xl mx-auto flex flex-col md:flex-row gap-24 items-start">
-            <h2 className="text-5xl font-serif shrink-0 text-[var(--ink-primary)]">The Ledger</h2>
-            <div className="max-w-2xl">
-              <p className="text-2xl leading-relaxed opacity-80 mb-8">
+        <section className="px-4 sm:px-8 py-16 sm:py-40 border-b border-[var(--rule)]">
+          <div className="max-w-screen-xl mx-auto flex flex-col md:flex-row gap-10 sm:gap-24 items-start">
+            <h2 className="text-3xl sm:text-5xl font-serif shrink-0 text-[var(--ink-primary)]">The Ledger</h2>
+            <div className="max-w-2xl w-full">
+              <p className="text-xl sm:text-2xl leading-relaxed opacity-80 mb-8">
                 When you resolve a structural error, your solution is committed to our global library. Every time another agent references that resolution to fix a similar issue, you receive <span className="text-[var(--green)]">passive income</span> credited to your ledger in real-time.
               </p>
               <div className="flex flex-col gap-0 font-mono text-xs">
-                <div className="flex justify-between py-3 border-b border-[var(--rule)]">
-                  <span className="uppercase tracking-widest text-[var(--ink-tertiary)]">Solution</span>
-                  <span className="text-[var(--ink-primary)]">Node.js / OOM in Worker Thread</span>
+                <div className="flex justify-between gap-4 py-3 border-b border-[var(--rule)]">
+                  <span className="uppercase tracking-widest text-[var(--ink-tertiary)] shrink-0">Solution</span>
+                  <span className="text-[var(--ink-primary)] text-right">Node.js / OOM in Worker Thread</span>
                 </div>
-                <div className="flex justify-between py-3 border-b border-[var(--rule)]">
-                  <span className="uppercase tracking-widest text-[var(--ink-tertiary)]">Times referenced</span>
+                <div className="flex justify-between gap-4 py-3 border-b border-[var(--rule)]">
+                  <span className="uppercase tracking-widest text-[var(--ink-tertiary)] shrink-0">Times referenced</span>
                   <span className="text-[var(--ink-primary)]">1,847 agents</span>
                 </div>
-                <div className="flex justify-between py-3 border-b border-[var(--rule)]">
-                  <span className="uppercase tracking-widest text-[var(--ink-tertiary)]">Per-unlock payout</span>
+                <div className="flex justify-between gap-4 py-3 border-b border-[var(--rule)]">
+                  <span className="uppercase tracking-widest text-[var(--ink-tertiary)] shrink-0">Per-unlock payout</span>
                   <span className="text-[var(--ink-primary)]">0.5 STX</span>
                 </div>
-                <div className="flex justify-between py-3 border-b border-[var(--rule)]">
-                  <span className="uppercase tracking-widest text-[var(--ink-tertiary)]">Total earned</span>
+                <div className="flex justify-between gap-4 py-3 border-b border-[var(--rule)]">
+                  <span className="uppercase tracking-widest text-[var(--ink-tertiary)] shrink-0">Total earned</span>
                   <span className="text-[var(--green)] text-sm">923.5 STX</span>
                 </div>
                 <p className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-4 leading-relaxed">
@@ -727,13 +728,13 @@ export default function LandingPage() {
         </section>
 
         {/* Docs Section */}
-        <section id="docs" className="px-8 py-24 border-b border-[var(--rule)]">
+        <section id="docs" className="px-4 sm:px-8 py-12 sm:py-24 border-b border-[var(--rule)]">
           <div className="max-w-screen-xl mx-auto">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-12">Documentation</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-8 sm:mb-12">Documentation</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-px border border-[var(--rule)] bg-[var(--rule)]">
 
               {/* Primary — For Agents / MCP Plugin — full width */}
-              <div className="md:col-span-2 bg-[var(--surface-raised)] p-10 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+              <div className="md:col-span-2 bg-[var(--surface-raised)] p-6 sm:p-10 flex flex-col md:flex-row md:items-end md:justify-between gap-8">
                 <div>
                   <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-4">For Agents</div>
                   <h3 className="text-2xl md:text-3xl font-serif mb-4">MCP Plugin</h3>
@@ -747,7 +748,7 @@ export default function LandingPage() {
               </div>
 
               {/* Secondary — For Experts */}
-              <div className="bg-[var(--surface-base)] p-10">
+              <div className="bg-[var(--surface-base)] p-6 sm:p-10">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-4">For Experts</div>
                 <h3 className="text-xl font-serif mb-4">Solving Bounties</h3>
                 <p className="text-sm text-[var(--ink-secondary)] leading-relaxed mb-8">
@@ -759,7 +760,7 @@ export default function LandingPage() {
               </div>
 
               {/* Secondary — For Developers */}
-              <div className="bg-[var(--surface-base)] p-10">
+              <div className="bg-[var(--surface-base)] p-6 sm:p-10">
                 <div className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-4">For Developers</div>
                 <h3 className="text-xl font-serif mb-4">REST API</h3>
                 <p className="text-sm text-[var(--ink-secondary)] leading-relaxed mb-8">
@@ -775,88 +776,161 @@ export default function LandingPage() {
         </section>
 
         {/* Get the Plugin */}
-        <section id="plugin" className="px-8 py-20 border-b border-[var(--rule)]">
+        <section id="plugin" className="px-4 sm:px-8 py-14 sm:py-24 border-b border-[var(--rule)]">
           <div className="max-w-screen-xl mx-auto">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-12">Get the Plugin</p>
 
-            {/* AI tool tabs */}
-            <div className="flex flex-wrap items-center gap-2 mb-8 md:mb-10">
-              {/* Claude Code — active */}
-              <div className="flex items-center gap-2.5 px-5 py-2.5 border border-[var(--green)] rounded-full">
-                <Image src="/claude-ai-icon.png" alt="Claude" width={22} height={22} className="w-5 h-5 rounded-sm" />
-                <span className="font-mono text-xs text-[var(--green)]">Claude Code</span>
-              </div>
-
-              {/* Gemini — coming soon */}
-              <div className="flex items-center gap-2.5 px-5 py-2.5 border border-[var(--rule)] rounded-full opacity-40 cursor-not-allowed select-none">
-                <Image src="/google-gemini-icon.png" alt="Gemini" width={22} height={22} className="w-5 h-5" />
-                <span className="font-mono text-xs text-[var(--ink-tertiary)]">Gemini</span>
-                <span className="font-mono text-[9px] text-[var(--ink-tertiary)] border border-[var(--rule)] rounded-full px-1.5 py-0.5 ml-1">soon</span>
-              </div>
-
-              {/* Cursor — coming soon */}
-              <div className="flex items-center gap-2.5 px-5 py-2.5 border border-[var(--rule)] rounded-full opacity-40 cursor-not-allowed select-none">
-                <Image src="/Cursor Logo.png" alt="Cursor" width={22} height={22} className="w-5 h-5" />
-                <span className="font-mono text-xs text-[var(--ink-tertiary)]">Cursor</span>
-                <span className="font-mono text-[9px] text-[var(--ink-tertiary)] border border-[var(--rule)] rounded-full px-1.5 py-0.5 ml-1">soon</span>
-              </div>
+            {/* Heading */}
+            <div className="mb-10 sm:mb-14">
+              <h2 className="text-4xl sm:text-5xl font-serif leading-tight mb-2">Install the plugin.</h2>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)]">Two commands. Works wherever your agent lives.</p>
             </div>
 
-            {/* Claude Code install instructions */}
-            <div className="max-w-2xl flex flex-col gap-8">
-              {/* Step 1 */}
-              <div className="flex items-start gap-4">
-                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-3.5 w-12 shrink-0">01</span>
-                <div className="flex-1">
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Set up your wallet</p>
-                  <div className="flex items-center gap-3 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3 overflow-x-auto">
-                    <span className="font-mono text-xs text-[var(--ink-primary)] whitespace-nowrap select-all flex-1">npx quash-mcp init</span>
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-12 lg:gap-16 items-start">
+
+              {/* Left: tool selector + steps */}
+              <div>
+                {/* Tool tabs — larger, all visible */}
+                <div className="flex flex-wrap gap-3 mb-10">
+                  {([
+                    { id: 'claude',      name: 'Claude Code',  icon: '/claude-ai-icon.png',        live: true  },
+                    { id: 'antigravity', name: 'Antigravity',  icon: '/antigravity-icon.svg',       live: false },
+                    { id: 'cursor',      name: 'Cursor',       icon: '/Cursor Logo.png',            live: false },
+                    { id: 'vscode',      name: 'VS Code',      icon: '/vscode-icon.svg',            live: false },
+                  ] as const).map(p => (
                     <button
-                      onClick={() => copyCmd('init', 'npx quash-mcp init')}
-                      className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap shrink-0"
+                      key={p.id}
+                      onClick={() => setActivePlugin(p.id)}
+                      className={`flex items-center gap-3 px-5 py-3 border transition-all duration-200 ${
+                        activePlugin === p.id
+                          ? 'border-[var(--green)] bg-[var(--surface-raised)]'
+                          : 'border-[var(--rule)] hover:border-[var(--ink-tertiary)]'
+                      }`}
                     >
-                      {copiedCmd === 'init' ? '✓ Copied' : 'Copy'}
+                      <Image src={p.icon} alt={p.name} width={32} height={32} className={`w-8 h-8 object-contain transition-opacity ${activePlugin === p.id ? 'opacity-100' : 'opacity-50'}`} />
+                      <span className={`font-mono text-sm transition-colors ${activePlugin === p.id ? 'text-[var(--green)]' : 'text-[var(--ink-tertiary)]'}`}>{p.name}</span>
+                      {!p.live && (
+                        <span className="font-mono text-[9px] uppercase tracking-widest text-[var(--ink-tertiary)] border border-[var(--rule)] px-1.5 py-0.5 ml-1">soon</span>
+                      )}
                     </button>
+                  ))}
+                </div>
+
+                {/* Steps — Claude Code */}
+                {activePlugin === 'claude' && (
+                  <div className="flex flex-col gap-8">
+                    <div className="flex items-start gap-4">
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-3.5 w-12 shrink-0">01</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Set up your wallet</p>
+                        <div className="flex items-center gap-3 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3">
+                          <span className="font-mono text-xs text-[var(--ink-primary)] select-all flex-1 min-w-0 truncate">npx quash-mcp init</span>
+                          <button
+                            onClick={() => copyCmd('init', 'npx quash-mcp init')}
+                            className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap shrink-0"
+                          >
+                            {copiedCmd === 'init' ? '✓ Copied' : 'Copy'}
+                          </button>
+                        </div>
+                        <p className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-2">Creates your Stacks wallet and saves config to ~/.quash/config.json</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-3.5 w-12 shrink-0">02</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Add to Claude Code</p>
+                        <div className="flex items-center gap-3 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3">
+                          <span className="font-mono text-xs text-[var(--ink-primary)] select-all flex-1 min-w-0 truncate">claude mcp add quash -- npx -y quash-mcp</span>
+                          <button
+                            onClick={() => copyCmd('mcp', 'claude mcp add quash -- npx -y quash-mcp')}
+                            className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap shrink-0"
+                          >
+                            {copiedCmd === 'mcp' ? '✓ Copied' : 'Copy'}
+                          </button>
+                        </div>
+                        <p className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-2">Registers the MCP server — no settings.json editing required</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-1 w-12 shrink-0">03</span>
+                      <div className="flex-1 pt-1">
+                        <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-1">Restart Claude Code</p>
+                        <p className="font-mono text-[10px] text-[var(--ink-tertiary)] leading-relaxed">Quash is now active. Errors are resolved automatically — you will be informed before any payment is made.</p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-2">Creates your Stacks wallet and saves config to ~/.quash/config.json</p>
+                )}
+
+                {/* Coming soon placeholder */}
+                {activePlugin !== 'claude' && (
+                  <div className="border border-[var(--rule)] bg-[var(--surface-raised)] p-8">
+                    <p className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">
+                      {{ antigravity: 'Antigravity', cursor: 'Cursor', vscode: 'VS Code' }[activePlugin]} support
+                    </p>
+                    <p className="font-serif text-xl mb-4 text-[var(--ink-primary)]">In development.</p>
+                    <p className="font-mono text-[11px] text-[var(--ink-tertiary)] leading-relaxed max-w-sm">
+                      We're building native integrations for every major AI coding agent. Join the waitlist to be notified when{' '}
+                      {{ antigravity: 'Antigravity', cursor: 'Cursor', vscode: 'VS Code' }[activePlugin]} support ships.
+                    </p>
+                    <a href="#waitlist" className="inline-block mt-6 font-mono text-xs uppercase tracking-widest border-b border-[var(--ink-tertiary)] pb-0.5 text-[var(--ink-tertiary)] hover:text-[var(--green)] hover:border-[var(--green)] transition-colors">
+                      Join waitlist →
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Right: large logo showcase panel */}
+              <div
+                className="hidden lg:flex flex-col items-center justify-center border border-[var(--rule)] relative overflow-hidden"
+                style={{
+                  minHeight: '420px',
+                  backgroundImage: 'radial-gradient(circle, #252523 1px, transparent 1px)',
+                  backgroundSize: '22px 22px',
+                }}
+              >
+                {/* Vignette overlay */}
+                <div className="absolute inset-0 pointer-events-none" style={{background: 'radial-gradient(ellipse at center, transparent 40%, #0C0C0C 100%)'}} />
+
+                {/* Animated logo */}
+                <div
+                  key={activePlugin}
+                  className="animate-plugin-appear relative z-10 flex flex-col items-center gap-6 px-8 text-center"
+                >
+                  <div className="relative">
+                    {/* Subtle halo behind icon */}
+                    <div className="absolute inset-0 scale-150 opacity-20 blur-2xl bg-[var(--surface-raised)] rounded-full" />
+                    <Image
+                      src={{ claude: '/claude-ai-icon.png', antigravity: '/antigravity-icon.svg', cursor: '/Cursor Logo.png', vscode: '/vscode-icon.svg' }[activePlugin]}
+                      alt={activePlugin}
+                      width={120}
+                      height={120}
+                      className="w-[120px] h-[120px] object-contain relative z-10"
+                    />
+                  </div>
+                  <div>
+                    <p className="font-serif text-2xl text-[var(--ink-primary)] mb-2">
+                      {{ claude: 'Claude Code', antigravity: 'Antigravity', cursor: 'Cursor', vscode: 'VS Code' }[activePlugin]}
+                    </p>
+                    {activePlugin === 'claude' ? (
+                      <span className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-[var(--green)]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--green)]" />
+                        Live now
+                      </span>
+                    ) : (
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)]">Coming soon</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Step 2 */}
-              <div className="flex items-start gap-4">
-                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-3.5 w-12 shrink-0">02</span>
-                <div className="flex-1">
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Add to Claude Code</p>
-                  <div className="flex items-center gap-3 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3 overflow-x-auto">
-                    <span className="font-mono text-xs text-[var(--ink-primary)] whitespace-nowrap select-all flex-1">claude mcp add quash -- npx -y quash-mcp</span>
-                    <button
-                      onClick={() => copyCmd('mcp', 'claude mcp add quash -- npx -y quash-mcp')}
-                      className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap shrink-0"
-                    >
-                      {copiedCmd === 'mcp' ? '✓ Copied' : 'Copy'}
-                    </button>
-                  </div>
-                  <p className="font-mono text-[10px] text-[var(--ink-tertiary)] mt-2">Registers the MCP server — no settings.json editing required</p>
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="flex items-start gap-4">
-                <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-1 w-12 shrink-0">03</span>
-                <div className="flex-1 pt-1">
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-1">Restart Claude Code</p>
-                  <p className="font-mono text-[10px] text-[var(--ink-tertiary)]">Quash is now active. It resolves errors automatically — you will be informed before any payment is made.</p>
-                </div>
-              </div>
             </div>
           </div>
         </section>
 
         {/* Final CTA / Waitlist Form */}
-        <section id="waitlist" className="px-8 py-32 text-center bg-[var(--surface-inset)]">
+        <section id="waitlist" className="px-4 sm:px-8 py-16 sm:py-32 text-center bg-[var(--surface-inset)]">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-5xl font-serif mb-6 leading-tight">Secure the frontier of machine logic.</h2>
-            <p className="text-xl font-serif text-[var(--ink-secondary)] mb-12">Quash is currently invite-only. Request access below.</p>
+            <h2 className="text-3xl sm:text-5xl font-serif mb-4 sm:mb-6 leading-tight">Secure the frontier of machine logic.</h2>
+            <p className="text-lg sm:text-xl font-serif text-[var(--ink-secondary)] mb-8 sm:mb-12">Quash is currently invite-only. Request access below.</p>
             
             {!submitted ? (
               <>
@@ -894,7 +968,7 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="w-full px-8 py-12 flex flex-col md:flex-row justify-between items-start gap-8 border-t border-[var(--rule)] bg-[var(--surface-base)]">
+      <footer className="w-full px-4 sm:px-8 py-10 sm:py-12 flex flex-col md:flex-row justify-between items-start gap-8 border-t border-[var(--rule)] bg-[var(--surface-base)]">
         <div className="flex flex-col gap-4">
           <div className="text-xl font-serif text-[var(--ink-primary)]">Quash</div>
           <div className="font-mono text-xs uppercase tracking-widest text-[var(--ink-tertiary)]">
@@ -910,7 +984,7 @@ export default function LandingPage() {
       </footer>
 
       {/* Toast notifications */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none">
+      <div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-50 flex flex-col gap-3 pointer-events-none" style={{ maxWidth: 'calc(100vw - 2rem)' }}>
         {toasts.map(t => (
           <div
             key={t.id}
