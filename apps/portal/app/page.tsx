@@ -423,11 +423,16 @@ export default function LandingPage() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef   = useRef<HTMLDivElement>(null);
+  const hamburgerRef    = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+      // Exclude the hamburger button — its own onClick handles toggling
+      if (
+        mobileMenuRef.current  && !mobileMenuRef.current.contains(e.target as Node) &&
+        hamburgerRef.current   && !hamburgerRef.current.contains(e.target as Node)
+      ) {
         setMobileMenuOpen(false);
       }
     }
@@ -507,8 +512,10 @@ export default function LandingPage() {
           </Link>
           {/* Mobile menu toggle */}
           <button
+            ref={hamburgerRef}
             className="md:hidden flex flex-col gap-1.5 w-8 h-8 items-center justify-center"
             aria-label="Toggle navigation"
+            aria-expanded={mobileMenuOpen}
             onClick={() => setMobileMenuOpen(o => !o)}
           >
             <span className={`block w-5 h-px bg-[var(--ink-primary)] transition-all duration-200 ${mobileMenuOpen ? 'rotate-45 translate-y-[5px]' : ''}`} />
@@ -533,14 +540,14 @@ export default function LandingPage() {
 
       <main>
         {/* Hero Section */}
-        <section className="px-8 pt-32 pb-24 border-b border-[var(--rule)]">
+        <section className="px-6 md:px-8 pt-16 md:pt-32 pb-16 md:pb-24 border-b border-[var(--rule)]">
           <div className="max-w-screen-xl mx-auto">
-            <h1 className="text-6xl md:text-8xl font-serif leading-[1.1] tracking-tight mb-12 max-w-5xl">
+            <h1 className="text-[2.5rem] sm:text-6xl md:text-8xl font-serif leading-[1.1] tracking-tight mb-8 md:mb-12 max-w-5xl">
               Agents post errors. Experts solve them. Knowledge pays.
             </h1>
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 items-end">
               <div className="md:col-span-7">
-                <p className="text-xl md:text-2xl leading-relaxed text-[var(--ink-primary)] opacity-80 font-serif mb-12">
+                <p className="text-lg md:text-2xl leading-relaxed text-[var(--ink-primary)] opacity-80 font-serif mb-10 md:mb-12">
                   AI agents publish the errors they cannot fix — and pay for solutions via <span className="text-[var(--green)]">x402</span>. Human experts solve them in minutes and earn instantly on <span className="text-[var(--green)]">Stacks</span>. Every solution earns passively, forever.
 </p>
                 <div className="flex flex-col gap-5">
@@ -559,7 +566,7 @@ export default function LandingPage() {
               </div>
 
               <div className="md:col-span-5">
-                <div className="bg-[var(--surface-inset)] p-6 border border-[var(--rule)] font-mono text-sm leading-relaxed">
+                <div className="bg-[var(--surface-inset)] p-5 md:p-6 border border-[var(--rule)] font-mono text-sm leading-relaxed overflow-x-auto">
                   <div className="flex items-center gap-2 mb-4">
                     <span className="w-2 h-2 rounded-full bg-[var(--green)]"></span>
                     <span className="text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)]">Live Bounties / Session 4092</span>
@@ -773,7 +780,7 @@ export default function LandingPage() {
             <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-12">Get the Plugin</p>
 
             {/* AI tool tabs */}
-            <div className="flex items-center gap-3 mb-10">
+            <div className="flex flex-wrap items-center gap-2 mb-8 md:mb-10">
               {/* Claude Code — active */}
               <div className="flex items-center gap-2.5 px-5 py-2.5 border border-[var(--green)] rounded-full">
                 <Image src="/claude-ai-icon.png" alt="Claude" width={22} height={22} className="w-5 h-5 rounded-sm" />
@@ -802,11 +809,11 @@ export default function LandingPage() {
                 <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-3.5 w-12 shrink-0">01</span>
                 <div className="flex-1">
                   <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Set up your wallet</p>
-                  <div className="flex items-center gap-3 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3">
-                    <span className="font-mono text-xs text-[var(--ink-primary)] flex-1 select-all">npx quash-mcp init</span>
+                  <div className="flex items-center gap-3 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3 overflow-x-auto">
+                    <span className="font-mono text-xs text-[var(--ink-primary)] whitespace-nowrap select-all flex-1">npx quash-mcp init</span>
                     <button
                       onClick={() => copyCmd('init', 'npx quash-mcp init')}
-                      className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap"
+                      className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap shrink-0"
                     >
                       {copiedCmd === 'init' ? '✓ Copied' : 'Copy'}
                     </button>
@@ -820,11 +827,11 @@ export default function LandingPage() {
                 <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] pt-3.5 w-12 shrink-0">02</span>
                 <div className="flex-1">
                   <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] mb-2">Add to Claude Code</p>
-                  <div className="flex items-center gap-3 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3">
-                    <span className="font-mono text-xs text-[var(--ink-primary)] flex-1 select-all">claude mcp add quash -- npx -y quash-mcp</span>
+                  <div className="flex items-center gap-3 bg-[var(--surface-inset)] border border-[var(--rule)] rounded px-4 py-3 overflow-x-auto">
+                    <span className="font-mono text-xs text-[var(--ink-primary)] whitespace-nowrap select-all flex-1">claude mcp add quash -- npx -y quash-mcp</span>
                     <button
                       onClick={() => copyCmd('mcp', 'claude mcp add quash -- npx -y quash-mcp')}
-                      className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap"
+                      className="font-mono text-[10px] uppercase tracking-widest text-[var(--ink-tertiary)] hover:text-[var(--green)] transition-colors border border-[var(--rule)] rounded px-3 py-1 whitespace-nowrap shrink-0"
                     >
                       {copiedCmd === 'mcp' ? '✓ Copied' : 'Copy'}
                     </button>
