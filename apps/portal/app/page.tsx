@@ -524,7 +524,10 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-12 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-12 items-start">
+
+              {/* Terminal */}
+              <TerminalDemo />
 
               {/* Sidebar — feature descriptions */}
               <div className="flex flex-col divide-y divide-[var(--rule)]">
@@ -540,9 +543,6 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-
-              {/* Terminal */}
-              <TerminalDemo />
             </div>
           </div>
         </section>
